@@ -1,0 +1,1611 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IMC y ferritina sérica · Panel epidemiológico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+<style>
+:root{
+  --ink:#101E27;
+  --paper:#F5F6F2;
+  --panel:#FFFFFF;
+  --line:#DADFD8;
+  --line-strong:#B9C2BA;
+  --teal:#1F6E75;
+  --teal-deep:#134048;
+  --teal-tint:#E4F0EF;
+  --amber:#B9812E;
+  --amber-tint:#FBF1E1;
+  --red:#A63A31;
+  --red-tint:#F7E9E7;
+  --green:#3E7A56;
+  --green-tint:#E7F1EA;
+  --muted:#5B6B66;
+  --muted-2:#8A968F;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',sans-serif;}
+body{font-size:14.5px;line-height:1.55;}
+h1,h2,h3,h4{font-family:'Source Serif 4',serif;font-weight:600;margin:0 0 .4em 0;color:var(--ink);}
+.mono{font-family:'IBM Plex Mono',monospace;}
+a{color:var(--teal-deep);}
+.hidden{display:none !important;}
+
+/* ---------- Header / Hero ---------- */
+.hero{
+  background:linear-gradient(155deg,var(--ink) 0%, #1B3038 62%, var(--teal-deep) 100%);
+  color:#F2F3EE;
+  padding:36px 28px 30px;
+  position:relative;
+  overflow:hidden;
+}
+.hero::after{
+  content:"";
+  position:absolute;right:-60px;top:-60px;width:280px;height:280px;border-radius:50%;
+  background:radial-gradient(circle at center, rgba(255,255,255,0.06), transparent 70%);
+}
+.hero-eyebrow{
+  font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:#9FD4D2;margin-bottom:10px;display:flex;align-items:center;gap:10px;
+}
+.hero-eyebrow .dot{width:6px;height:6px;border-radius:50%;background:#9FD4D2;display:inline-block;}
+.hero h1{color:#fff;font-size:26px;max-width:820px;margin-bottom:10px;}
+.hero .question{
+  font-family:'Source Serif 4',serif;font-style:italic;font-size:16px;color:#D8E4E0;max-width:760px;
+  border-left:2px solid rgba(255,255,255,.35);padding-left:14px;margin-top:12px;
+}
+.hero-stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px;}
+.ribbon-stat{
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:3px;
+  padding:10px 14px;min-width:150px;
+}
+.ribbon-stat .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:#A9B7B2;margin-bottom:4px;}
+.ribbon-stat .val{font-family:'IBM Plex Mono',monospace;font-size:17px;color:#fff;}
+.ribbon-stat .sub{font-size:11px;color:#9FB0AA;margin-top:2px;}
+/* confidence ribbon motif: small tick bar */
+.ci-ribbon{position:relative;height:6px;background:rgba(255,255,255,.14);border-radius:3px;margin-top:8px;overflow:visible;}
+.ci-ribbon .band{position:absolute;top:0;bottom:0;background:#9FD4D2;border-radius:3px;opacity:.85;}
+.ci-ribbon .pt{position:absolute;top:-3px;width:2px;height:12px;background:#fff;}
+
+/* ---------- Filter bar ---------- */
+.filterbar{
+  background:var(--panel);border-bottom:1px solid var(--line);
+  padding:14px 28px;position:sticky;top:0;z-index:30;
+  box-shadow:0 2px 10px rgba(16,30,39,.04);
+}
+.filterbar-row{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;}
+.f-group{display:flex;flex-direction:column;gap:6px;min-width:150px;}
+.f-group .f-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;}
+.chiprow{display:flex;flex-wrap:wrap;gap:5px;}
+.chip{
+  border:1px solid var(--line-strong);background:#fff;color:var(--ink);border-radius:14px;
+  padding:4px 10px;font-size:12px;cursor:pointer;user-select:none;transition:all .12s;
+}
+.chip.active{background:var(--teal);border-color:var(--teal);color:#fff;}
+.range-inputs{display:flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:12px;}
+.range-inputs input[type=number]{width:56px;padding:3px 5px;border:1px solid var(--line-strong);border-radius:3px;font-family:inherit;font-size:12px;}
+.range-inputs input[type=range]{width:90px;}
+.f-check{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);}
+.n-indicator{
+  margin-left:auto;display:flex;align-items:center;gap:14px;
+}
+.n-badge{
+  font-family:'IBM Plex Mono',monospace;background:var(--teal-tint);color:var(--teal-deep);
+  padding:8px 14px;border-radius:4px;font-size:13px;border:1px solid #C6E0DE;white-space:nowrap;
+}
+.n-badge b{font-size:16px;}
+.reset-btn{
+  background:none;border:1px solid var(--line-strong);border-radius:4px;padding:7px 12px;font-size:12px;
+  cursor:pointer;color:var(--muted);font-family:'IBM Plex Sans',sans-serif;
+}
+.reset-btn:hover{border-color:var(--teal);color:var(--teal-deep);}
+.warn-inline{
+  font-size:11.5px;color:var(--amber);background:var(--amber-tint);border:1px solid #EAD3A4;
+  padding:5px 9px;border-radius:4px;display:inline-flex;align-items:center;gap:5px;margin-top:2px;
+}
+
+/* ---------- Tabs ---------- */
+.tabs-nav{
+  display:flex;gap:2px;overflow-x:auto;background:var(--panel);border-bottom:1px solid var(--line);
+  padding:0 28px;position:sticky;top:126px;z-index:29;
+}
+.tab-btn{
+  border:none;background:none;padding:12px 14px;font-size:12.5px;font-family:'IBM Plex Sans',sans-serif;
+  color:var(--muted);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;font-weight:500;
+}
+.tab-btn.active{color:var(--teal-deep);border-bottom-color:var(--teal);font-weight:600;}
+.tab-btn:hover{color:var(--teal-deep);}
+
+/* ---------- Main content ---------- */
+.wrap{max-width:1180px;margin:0 auto;padding:26px 28px 60px;}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:22px 24px;margin-bottom:18px;}
+.panel h2{font-size:19px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:16px;}
+.panel h2 .tag{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;background:var(--teal-tint);color:var(--teal-deep);
+  padding:2px 7px;border-radius:3px;margin-left:10px;vertical-align:middle;text-transform:none;letter-spacing:0;
+}
+.panel h2 .tag.static{background:#EDEAE0;color:#6b6350;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+@media(max-width:880px){.grid2,.grid3{grid-template-columns:1fr;}}
+.subhead{font-size:13px;font-weight:600;color:var(--teal-deep);margin:18px 0 8px;text-transform:uppercase;letter-spacing:.04em;}
+.subhead:first-child{margin-top:0;}
+p.lead{color:var(--muted);font-size:13.5px;margin:0 0 14px;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;background:#FAFAF7;}
+td.num,th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
+tr:hover td{background:#FAFCFB;}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-family:'IBM Plex Mono',monospace;}
+.badge.sig{background:var(--green-tint);color:var(--green);}
+.badge.nonsig{background:#EFEFEC;color:var(--muted);}
+.badge.neg{background:var(--red-tint);color:var(--red);}
+.callout{border-left:3px solid var(--teal);background:var(--teal-tint);padding:10px 14px;border-radius:0 4px 4px 0;font-size:13px;margin:12px 0;}
+.callout.warn{border-color:var(--amber);background:var(--amber-tint);}
+.callout.danger{border-left-color:var(--red);background:var(--red-tint);}
+.stat-line{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--line);font-size:13px;}
+.stat-line .k{color:var(--muted);}
+.stat-line .v{font-family:'IBM Plex Mono',monospace;font-weight:500;}
+.plotdiv{width:100%;}
+.interp-block{border:1px solid var(--line);border-radius:5px;padding:14px 16px;margin-bottom:12px;}
+.interp-block h4{font-size:13px;color:var(--teal-deep);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;}
+.interp-block .n{font-family:'IBM Plex Mono',monospace;background:var(--ink);color:#fff;font-size:10px;padding:1px 6px;border-radius:8px;margin-right:8px;}
+footer{text-align:center;color:var(--muted-2);font-size:11.5px;padding:20px 0 40px;}
+::-webkit-scrollbar{height:8px;width:8px;}
+::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:4px;}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-eyebrow"><span class="dot"></span>ENSANUT · MUESTRA ANALÍTICA · N=220 · ANÁLISIS TRANSVERSAL</div>
+  <h1>¿Está la relación entre IMC y ferritina sérica explicada por inflamación sistémica?</h1>
+  <div class="question">"¿Existe una asociación entre el IMC y la concentración de ferritina sérica en esta muestra, y cómo cambia dicha asociación después de considerar variables potencialmente confusoras?"</div>
+  <div class="hero-stats" id="heroStats"></div>
+</div>
+
+<div class="filterbar">
+  <div class="filterbar-row">
+    <div class="f-group">
+      <span class="f-label">Sexo</span>
+      <div class="chiprow" id="f-sexo"></div>
+    </div>
+    <div class="f-group">
+      <span class="f-label">Región</span>
+      <div class="chiprow" id="f-region"></div>
+    </div>
+    <div class="f-group">
+      <span class="f-label">Edad (años)</span>
+      <div class="range-inputs">
+        <input type="number" id="edadMin" class="mono"><span>–</span><input type="number" id="edadMax" class="mono">
+      </div>
+      <label class="f-check"><input type="checkbox" id="edadNA" checked> incluir sin dato</label>
+    </div>
+    <div class="f-group">
+      <span class="f-label">IMC (kg/m²)</span>
+      <div class="range-inputs">
+        <input type="number" step="0.1" id="imcMin" class="mono"><span>–</span><input type="number" step="0.1" id="imcMax" class="mono">
+      </div>
+      <label class="f-check"><input type="checkbox" id="imcNA" checked> incluir sin dato</label>
+    </div>
+    <div class="f-group">
+      <span class="f-label">PCR (mg/L)</span>
+      <div class="range-inputs">
+        <input type="number" step="0.1" id="pcrMin" class="mono"><span>–</span><input type="number" step="0.1" id="pcrMax" class="mono">
+      </div>
+    </div>
+    <div class="f-group">
+      <span class="f-label">Categoría IMC</span>
+      <div class="chiprow" id="f-imccat"></div>
+    </div>
+    <div class="n-indicator">
+      <button class="reset-btn" id="resetBtn">↺ Restablecer filtros</button>
+      <div class="n-badge">N tras filtros: <b id="nFiltered">220</b> / 220</div>
+    </div>
+  </div>
+  <div id="smallSampleWarn"></div>
+</div>
+
+<div class="tabs-nav" id="tabsNav"></div>
+
+<div class="wrap" id="tabContent"></div>
+
+<footer>Panel construido con datos de una muestra tipo ENSANUT (n=220) con fines analíticos y educativos · Los resultados son de naturaleza observacional y transversal: no establecen causalidad · Generado en Python (pandas/scipy/statsmodels) con capa interactiva en HTML/JS + Plotly</footer>
+
+<script>
+const DATA = [{"id_participante": "P0099", "edad": 18.0, "sexo": "Masculino", "region": "Centro", "imc": 20.4, "dieta_hierro_mg_dia": 9.3, "ferritina_serica_ng_ml": 44.2, "proteina_c_reactiva_mg_l": 0.79}, {"id_participante": "P0047", "edad": 26.0, "sexo": "Masculino", "region": "Sur", "imc": 24.5, "dieta_hierro_mg_dia": 12.5, "ferritina_serica_ng_ml": 39.6, "proteina_c_reactiva_mg_l": 0.41}, {"id_participante": "P0100", "edad": 61.0, "sexo": "Masculino", "region": "Sur", "imc": 23.1, "dieta_hierro_mg_dia": 17.9, "ferritina_serica_ng_ml": 40.5, "proteina_c_reactiva_mg_l": 1.73}, {"id_participante": "P0023", "edad": 19.0, "sexo": "Masculino", "region": "Sureste", "imc": 32.7, "dieta_hierro_mg_dia": 10.1, "ferritina_serica_ng_ml": 19.8, "proteina_c_reactiva_mg_l": 8.51}, {"id_participante": "P0079", "edad": 40.0, "sexo": "Femenino", "region": "Centro", "imc": null, "dieta_hierro_mg_dia": 11.7, "ferritina_serica_ng_ml": 38.0, "proteina_c_reactiva_mg_l": 1.81}, {"id_participante": "P0122", "edad": 54.0, "sexo": "Femenino", "region": "Norte", "imc": 27.5, "dieta_hierro_mg_dia": 13.3, "ferritina_serica_ng_ml": 45.8, "proteina_c_reactiva_mg_l": 2.41}, {"id_participante": "P0210", "edad": 54.0, "sexo": "Femenino", "region": "Centro", "imc": 30.3, "dieta_hierro_mg_dia": 13.2, "ferritina_serica_ng_ml": 18.3, "proteina_c_reactiva_mg_l": 7.38}, {"id_participante": "P0169", "edad": 45.0, "sexo": "Femenino", "region": "Centro", "imc": null, "dieta_hierro_mg_dia": 12.8, "ferritina_serica_ng_ml": 26.1, "proteina_c_reactiva_mg_l": 0.73}, {"id_participante": "P0025", "edad": 50.0, "sexo": "Femenino", "region": "Sureste", "imc": 23.9, "dieta_hierro_mg_dia": 13.5, "ferritina_serica_ng_ml": 23.1, "proteina_c_reactiva_mg_l": 2.68}, {"id_participante": "P0190", "edad": 54.0, "sexo": "Femenino", "region": "Centro", "imc": 25.6, "dieta_hierro_mg_dia": 16.4, "ferritina_serica_ng_ml": 23.5, "proteina_c_reactiva_mg_l": 1.87}, {"id_participante": "P0012", "edad": 41.0, "sexo": "Masculino", "region": "Norte", "imc": 29.5, "dieta_hierro_mg_dia": 13.9, "ferritina_serica_ng_ml": 41.4, "proteina_c_reactiva_mg_l": 0.1}, {"id_participante": "P0213", "edad": 18.0, "sexo": "Femenino", "region": "Centro", "imc": 28.5, "dieta_hierro_mg_dia": 12.9, "ferritina_serica_ng_ml": null, "proteina_c_reactiva_mg_l": 2.52}, {"id_participante": "P0075", "edad": 3.0, "sexo": "Masculino", "region": "Centro", "imc": 22.8, "dieta_hierro_mg_dia": 19.5, "ferritina_serica_ng_ml": 39.4, "proteina_c_reactiva_mg_l": 2.59}, {"id_participante": "P0166", "edad": 59.0, "sexo": "Femenino", "region": "Sureste", "imc": 33.0, "dieta_hierro_mg_dia": 12.9, "ferritina_serica_ng_ml": 23.1, "proteina_c_reactiva_mg_l": 5.25}, {"id_participante": "P0003", "edad": 32.0, "sexo": "Masculino", "region": "Sur", "imc": 20.8, "dieta_hierro_mg_dia": 16.7, "ferritina_serica_ng_ml": 30.4, "proteina_c_reactiva_mg_l": 0.49}, {"id_participante": "P0102", "edad": 41.0, "sexo": "Femenino", "region": "Centro", "imc": 26.8, "dieta_hierro_mg_dia": 14.5, "ferritina_serica_ng_ml": 32.3, "proteina_c_reactiva_mg_l": 1.77}, {"id_participante": "P0208", "edad": 45.0, "sexo": "Masculino", "region": "Sur", "imc": 23.1, "dieta_hierro_mg_dia": 12.6, "ferritina_serica_ng_ml": 30.2, "proteina_c_reactiva_mg_l": 4.07}, {"id_participante": "P0109", "edad": 22.0, "sexo": "Masculino", "region": "Sureste", "imc": 30.9, "dieta_hierro_mg_dia": 15.0, "ferritina_serica_ng_ml": 11.1, "proteina_c_reactiva_mg_l": 3.64}, {"id_participante": "P0091", "edad": 46.0, "sexo": "Masculino", "region": "Sur", "imc": 22.6, "dieta_hierro_mg_dia": 11.6, "ferritina_serica_ng_ml": 20.3, "proteina_c_reactiva_mg_l": 1.97}, {"id_participante": "P0183", "edad": 58.0, "sexo": "Femenino", "region": "Sur", "imc": null, "dieta_hierro_mg_dia": 14.3, "ferritina_serica_ng_ml": 39.3, "proteina_c_reactiva_mg_l": 1.58}, {"id_participante": "P0151", "edad": null, "sexo": "Femenino", "region": null, "imc": null, "dieta_hierro_mg_dia": 12.2, "ferritina_serica_ng_ml": 23.1, "proteina_c_reactiva_mg_l": 3.11}, {"id_participante": "P0142", "edad": 32.0, "sexo": "Femenino", "region": "Centro", "imc": 39.7, "dieta_hierro_mg_dia": null, "ferritina_serica_ng_ml": 29.1, "proteina_c_reactiva_mg_l": 11.7}, {"id_participante": "P0085", "edad": 64.0, "sexo": "Femenino", "region": "Centro", "imc": 24.6, "dieta_hierro_mg_dia": 13.6, "ferritina_serica_ng_ml": 47.2, "proteina_c_reactiva_mg_l": 3.06}, {"id_participante": "P0058", "edad": 31.0, "sexo": "Femenino", "region": "Sur", "imc": 22.2, "dieta_hierro_mg_dia": 16.0, "ferritina_serica_ng_ml": 41.9, "proteina_c_reactiva_mg_l": 2.83}, {"id_participante": "P0116", "edad": 25.0, "sexo": "Masculino", "region": "Centro", "imc": 26.9, "dieta_hierro_mg_dia": 15.1, "ferritina_serica_ng_ml": 46.7, "proteina_c_reactiva_mg_l": 1.8}, {"id_participante": "P0209", "edad": 40.0, "sexo": "Masculino", "region": "Norte", "imc": 29.4, "dieta_hierro_mg_dia": 18.3, "ferritina_serica_ng_ml": 28.8, "proteina_c_reactiva_mg_l": 2.35}, {"id_participante": "P0171", "edad": 61.0, "sexo": "Femenino", "region": "Centro", "imc": 38.7, "dieta_hierro_mg_dia": 15.6, "ferritina_serica_ng_ml": 20.2, "proteina_c_reactiva_mg_l": 8.53}, {"id_participante": "P0105", "edad": 25.0, "sexo": "Femenino", "region": "Centro", "imc": 19.4, "dieta_hierro_mg_dia": 16.3, "ferritina_serica_ng_ml": 49.8, "proteina_c_reactiva_mg_l": 2.03}, {"id_participante": "P0123", "edad": 52.0, "sexo": "Femenino", "region": "Sur", "imc": 28.7, "dieta_hierro_mg_dia": 14.9, "ferritina_serica_ng_ml": 58.7, "proteina_c_reactiva_mg_l": 0.51}, {"id_participante": "P0203", "edad": 20.0, "sexo": "Femenino", "region": "Centro", "imc": 30.8, "dieta_hierro_mg_dia": 14.5, "ferritina_serica_ng_ml": 22.1, "proteina_c_reactiva_mg_l": 4.69}, {"id_participante": "P0086", "edad": 41.0, "sexo": "Masculino", "region": "Norte", "imc": 24.2, "dieta_hierro_mg_dia": 11.4, "ferritina_serica_ng_ml": 42.4, "proteina_c_reactiva_mg_l": 1.99}, {"id_participante": "P0158", "edad": 46.0, "sexo": "Femenino", "region": "Norte", "imc": 29.7, "dieta_hierro_mg_dia": 16.2, "ferritina_serica_ng_ml": 12.2, "proteina_c_reactiva_mg_l": 3.29}, {"id_participante": "P0139", "edad": 56.0, "sexo": "Masculino", "region": "Centro", "imc": 24.4, "dieta_hierro_mg_dia": 10.6, "ferritina_serica_ng_ml": 39.8, "proteina_c_reactiva_mg_l": 0.94}, {"id_participante": "P0106", "edad": 52.0, "sexo": "Femenino", "region": "Centro", "imc": 30.4, "dieta_hierro_mg_dia": 15.7, "ferritina_serica_ng_ml": 12.7, "proteina_c_reactiva_mg_l": 7.92}, {"id_participante": "P0066", "edad": 21.0, "sexo": "Masculino", "region": "Norte", "imc": 19.5, "dieta_hierro_mg_dia": 13.9, "ferritina_serica_ng_ml": 35.2, "proteina_c_reactiva_mg_l": 2.31}, {"id_participante": "P0181", "edad": 44.0, "sexo": "Masculino", "region": "Sur", "imc": 20.2, "dieta_hierro_mg_dia": 13.6, "ferritina_serica_ng_ml": null, "proteina_c_reactiva_mg_l": 3.59}, {"id_participante": "P0141", "edad": 26.0, "sexo": "Masculino", "region": "Sur", "imc": 24.2, "dieta_hierro_mg_dia": 18.7, "ferritina_serica_ng_ml": 46.3, "proteina_c_reactiva_mg_l": 2.8}, {"id_participante": "P0180", "edad": null, "sexo": "Femenino", "region": "Sur", "imc": 27.1, "dieta_hierro_mg_dia": 13.2, "ferritina_serica_ng_ml": 50.4, "proteina_c_reactiva_mg_l": 1.54}, {"id_participante": "P0083", "edad": null, "sexo": "Masculino", "region": "Sureste", "imc": 24.6, "dieta_hierro_mg_dia": 7.4, "ferritina_serica_ng_ml": 25.6, "proteina_c_reactiva_mg_l": 0.72}, {"id_participante": "P0061", "edad": 57.0, "sexo": "Masculino", "region": "Norte", "imc": 21.9, "dieta_hierro_mg_dia": 16.8, "ferritina_serica_ng_ml": null, "proteina_c_reactiva_mg_l": 1.6}, {"id_participante": "P0132", "edad": 64.0, "sexo": "Femenino", "region": "Norte", "imc": null, "dieta_hierro_mg_dia": 13.1, "ferritina_serica_ng_ml": null, "proteina_c_reactiva_mg_l": 1.12}, {"id_participante": "P0010", "edad": 28.0, "sexo": "Masculino", "region": "Centro", "imc": 24.5, "dieta_hierro_mg_dia": 13.5, "ferritina_serica_ng_ml": 40.6, "proteina_c_reactiva_mg_l": 3.17}, {"id_participante": "P0019", "edad": 41.0, "sexo": "Masculino", "region": "Centro", "imc": 32.2, "dieta_hierro_mg_dia": 11.8, "ferritina_serica_ng_ml": null, "proteina_c_reactiva_mg_l": 1.87}, {"id_participante": "P0114", "edad": 24.0, "sexo": "Masculino", "region": "Centro", "imc": 24.8, "dieta_hierro_mg_dia": 17.5, "ferritina_serica_ng_ml": 32.9, "proteina_c_reactiva_mg_l": 2.31}, {"id_participante": "P0081", "edad": 38.0, "sexo": "Masculino", "region": "Centro", "imc": 26.2, "dieta_hierro_mg_dia": 12.4, "ferritina_serica_ng_ml": 33.8, "proteina_c_reactiva_mg_l": 1.03}, {"id_participante": "P0095", "edad": 42.0, "sexo": "Femenino", "region": "Sur", "imc": 21.0, "dieta_hierro_mg_dia": 5.7, "ferritina_serica_ng_ml": 45.2, "proteina_c_reactiva_mg_l": 2.76}, {"id_participante": "P0067", "edad": 46.0, "sexo": "Masculino", "region": "Centro", "imc": 35.0, "dieta_hierro_mg_dia": 14.4, "ferritina_serica_ng_ml": 14.6, "proteina_c_reactiva_mg_l": 3.01}, {"id_participante": "P0211", "edad": 49.0, "sexo": "Masculino", "region": "Sureste", "imc": 21.2, "dieta_hierro_mg_dia": 18.2, "ferritina_serica_ng_ml": 52.2, "proteina_c_reactiva_mg_l": 2.1}, {"id_participante": "P0098", "edad": 41.0, "sexo": "Femenino", "region": "Centro", "imc": 22.6, "dieta_hierro_mg_dia": 14.6, "ferritina_serica_ng_ml": 23.9, "proteina_c_reactiva_mg_l": 1.43}, {"id_participante": "P0015", "edad": 41.0, "sexo": "Masculino", "region": "Centro", "imc": 35.1, "dieta_hierro_mg_dia": 13.8, "ferritina_serica_ng_ml": 19.1, "proteina_c_reactiva_mg_l": 8.05}, {"id_participante": "P0028", "edad": 61.0, "sexo": "Masculino", "region": "Norte", "imc": 43.3, "dieta_hierro_mg_dia": 11.3, "ferritina_serica_ng_ml": 25.7, "proteina_c_reactiva_mg_l": 4.54}, {"id_participante": "P0219", "edad": 23.0, "sexo": "Masculino", "region": "Centro", "imc": 25.3, "dieta_hierro_mg_dia": 12.1, "ferritina_serica_ng_ml": 24.3, "proteina_c_reactiva_mg_l": 0.4}, {"id_participante": "P0041", "edad": 26.0, "sexo": "Masculino", "region": "Sureste", "imc": 36.1, "dieta_hierro_mg_dia": 12.2, "ferritina_serica_ng_ml": 19.3, "proteina_c_reactiva_mg_l": 8.69}, {"id_participante": "P0046", "edad": 31.0, "sexo": "Femenino", "region": "Centro", "imc": 32.9, "dieta_hierro_mg_dia": 14.1, "ferritina_serica_ng_ml": 7.3, "proteina_c_reactiva_mg_l": 6.41}, {"id_participante": "P0157", "edad": 60.0, "sexo": "Femenino", "region": "Norte", "imc": 25.7, "dieta_hierro_mg_dia": 14.8, "ferritina_serica_ng_ml": 28.3, "proteina_c_reactiva_mg_l": 0.81}, {"id_participante": "P0032", "edad": 45.0, "sexo": "Femenino", "region": null, "imc": 26.4, "dieta_hierro_mg_dia": 16.8, "ferritina_serica_ng_ml": 44.8, "proteina_c_reactiva_mg_l": 1.73}, {"id_participante": "P0172", "edad": 61.0, "sexo": "Masculino", "region": "Centro", "imc": 21.5, "dieta_hierro_mg_dia": 16.7, "ferritina_serica_ng_ml": 18.5, "proteina_c_reactiva_mg_l": 0.55}, {"id_participante": "P0135", "edad": 18.0, "sexo": "Femenino", "region": "Centro", "imc": 28.7, "dieta_hierro_mg_dia": 16.6, "ferritina_serica_ng_ml": 33.2, "proteina_c_reactiva_mg_l": 0.83}, {"id_participante": "P0033", "edad": 33.0, "sexo": "Masculino", "region": "Norte", "imc": null, "dieta_hierro_mg_dia": null, "ferritina_serica_ng_ml": 28.0, "proteina_c_reactiva_mg_l": 2.22}, {"id_participante": "P0014", "edad": 57.0, "sexo": "Femenino", "region": "Sur", "imc": 17.6, "dieta_hierro_mg_dia": 11.9, "ferritina_serica_ng_ml": 38.4, "proteina_c_reactiva_mg_l": 2.65}, {"id_participante": "P0133", "edad": 31.0, "sexo": "Femenino", "region": "Sur", "imc": 22.8, "dieta_hierro_mg_dia": 14.7, "ferritina_serica_ng_ml": 30.1, "proteina_c_reactiva_mg_l": 0.6}, {"id_participante": "P0110", "edad": null, "sexo": "Masculino", "region": "Sur", "imc": 27.8, "dieta_hierro_mg_dia": 12.4, "ferritina_serica_ng_ml": 40.2, "proteina_c_reactiva_mg_l": 2.77}, {"id_participante": "P0179", "edad": null, "sexo": "Femenino", "region": null, "imc": 29.3, "dieta_hierro_mg_dia": 12.9, "ferritina_serica_ng_ml": 52.2, "proteina_c_reactiva_mg_l": 2.78}, {"id_participante": "P0029", "edad": 42.0, "sexo": "Femenino", "region": null, "imc": 19.3, "dieta_hierro_mg_dia": 10.8, "ferritina_serica_ng_ml": 40.2, "proteina_c_reactiva_mg_l": 2.18}, {"id_participante": "P0064", "edad": 23.0, "sexo": "Masculino", "region": "Norte", "imc": 17.6, "dieta_hierro_mg_dia": 11.6, "ferritina_serica_ng_ml": 23.1, "proteina_c_reactiva_mg_l": 1.95}, {"id_participante": "P0216", "edad": 61.0, "sexo": "Masculino", "region": "Sur", "imc": 20.5, "dieta_hierro_mg_dia": null, "ferritina_serica_ng_ml": 40.0, "proteina_c_reactiva_mg_l": 2.53}, {"id_participante": "P0193", "edad": 61.0, "sexo": "Femenino", "region": "Centro", "imc": null, "dieta_hierro_mg_dia": 12.5, "ferritina_serica_ng_ml": 27.6, "proteina_c_reactiva_mg_l": 2.26}, {"id_participante": "P0016", "edad": 20.0, "sexo": "Femenino", "region": null, "imc": 29.6, "dieta_hierro_mg_dia": 14.7, "ferritina_serica_ng_ml": 28.8, "proteina_c_reactiva_mg_l": 0.88}, {"id_participante": "P0103", "edad": 28.0, "sexo": "Masculino", "region": "Sur", "imc": 23.8, "dieta_hierro_mg_dia": null, "ferritina_serica_ng_ml": 37.1, "proteina_c_reactiva_mg_l": 4.16}, {"id_participante": "P0059", "edad": 34.0, "sexo": "Femenino", "region": "Centro", "imc": 15.3, "dieta_hierro_mg_dia": 18.9, "ferritina_serica_ng_ml": 23.4, "proteina_c_reactiva_mg_l": 2.09}, {"id_participante": "P0175", "edad": 28.0, "sexo": "Femenino", "region": "Norte", "imc": 29.8, "dieta_hierro_mg_dia": 15.7, "ferritina_serica_ng_ml": 37.7, "proteina_c_reactiva_mg_l": 2.19}, {"id_participante": "P0037", "edad": 20.0, "sexo": "Masculino", "region": "Sureste", "imc": 28.0, "dieta_hierro_mg_dia": 11.5, "ferritina_serica_ng_ml": 17.9, "proteina_c_reactiva_mg_l": 3.17}, {"id_participante": "P0097", "edad": 26.0, "sexo": "Femenino", "region": "Sur", "imc": 23.2, "dieta_hierro_mg_dia": null, "ferritina_serica_ng_ml": 21.1, "proteina_c_reactiva_mg_l": 1.02}, {"id_participante": "P0201", "edad": 56.0, "sexo": "Masculino", "region": "Norte", "imc": 31.0, "dieta_hierro_mg_dia": 13.8, "ferritina_serica_ng_ml": 13.2, "proteina_c_reactiva_mg_l": 8.28}, {"id_participante": "P0052", "edad": 64.0, "sexo": "Masculino", "region": null, "imc": 28.2, "dieta_hierro_mg_dia": 16.8, "ferritina_serica_ng_ml": 29.3, "proteina_c_reactiva_mg_l": 1.34}, {"id_participante": "P0188", "edad": 44.0, "sexo": "Masculino", "region": "Norte", "imc": 38.9, "dieta_hierro_mg_dia": 18.6, "ferritina_serica_ng_ml": 37.6, "proteina_c_reactiva_mg_l": 11.23}, {"id_participante": "P0155", "edad": 62.0, "sexo": "Masculino", "region": "Centro", "imc": 16.9, "dieta_hierro_mg_dia": 13.4, "ferritina_serica_ng_ml": 26.1, "proteina_c_reactiva_mg_l": 2.23}, {"id_participante": "P0096", "edad": null, "sexo": "Masculino", "region": "Sur", "imc": 34.9, "dieta_hierro_mg_dia": 17.2, "ferritina_serica_ng_ml": 9.6, "proteina_c_reactiva_mg_l": 7.69}, {"id_participante": "P0202", "edad": 19.0, "sexo": "Femenino", "region": "Centro", "imc": 27.3, "dieta_hierro_mg_dia": 9.4, "ferritina_serica_ng_ml": 33.4, "proteina_c_reactiva_mg_l": 0.49}, {"id_participante": "P0126", "edad": 39.0, "sexo": "Femenino", "region": "Norte", "imc": 28.0, "dieta_hierro_mg_dia": 17.2, "ferritina_serica_ng_ml": 14.7, "proteina_c_reactiva_mg_l": 1.44}, {"id_participante": "P0167", "edad": 62.0, "sexo": "Femenino", "region": "Centro", "imc": 28.9, "dieta_hierro_mg_dia": 12.9, "ferritina_serica_ng_ml": 28.0, "proteina_c_reactiva_mg_l": 1.69}, {"id_participante": "P0127", "edad": 44.0, "sexo": "Femenino", "region": "Sur", "imc": 35.0, "dieta_hierro_mg_dia": 16.2, "ferritina_serica_ng_ml": 28.9, "proteina_c_reactiva_mg_l": 1.83}, {"id_participante": "P0154", "edad": 56.0, "sexo": "Masculino", "region": "Norte", "imc": null, "dieta_hierro_mg_dia": 12.5, "ferritina_serica_ng_ml": 39.4, "proteina_c_reactiva_mg_l": 0.94}, {"id_participante": "P0038", "edad": 54.0, "sexo": "Femenino", "region": "Centro", "imc": 23.0, "dieta_hierro_mg_dia": 15.8, "ferritina_serica_ng_ml": 48.8, "proteina_c_reactiva_mg_l": 1.42}, {"id_participante": "P0146", "edad": 30.0, "sexo": "Femenino", "region": "Norte", "imc": 29.6, "dieta_hierro_mg_dia": 14.9, "ferritina_serica_ng_ml": 50.8, "proteina_c_reactiva_mg_l": 2.05}, {"id_participante": "P0089", "edad": null, "sexo": "Masculino", "region": "Sur", "imc": 28.8, "dieta_hierro_mg_dia": 13.2, "ferritina_serica_ng_ml": 31.8, "proteina_c_reactiva_mg_l": 1.83}, {"id_participante": "P0178", "edad": 56.0, "sexo": "Masculino", "region": "Sureste", "imc": 25.8, "dieta_hierro_mg_dia": 20.3, "ferritina_serica_ng_ml": 18.7, "proteina_c_reactiva_mg_l": 0.62}, {"id_participante": "P0115", "edad": 26.0, "sexo": "Masculino", "region": "Centro", "imc": 28.7, "dieta_hierro_mg_dia": 11.4, "ferritina_serica_ng_ml": 56.6, "proteina_c_reactiva_mg_l": 1.48}, {"id_participante": "P0050", "edad": 37.0, "sexo": "Femenino", "region": "Norte", "imc": 27.4, "dieta_hierro_mg_dia": 14.6, "ferritina_serica_ng_ml": 31.5, "proteina_c_reactiva_mg_l": 4.02}, {"id_participante": "P0118", "edad": 51.0, "sexo": "Femenino", "region": "Centro", "imc": 23.6, "dieta_hierro_mg_dia": 14.8, "ferritina_serica_ng_ml": 50.0, "proteina_c_reactiva_mg_l": 1.44}, {"id_participante": "P0006", "edad": 38.0, "sexo": "Masculino", "region": "Sur", "imc": null, "dieta_hierro_mg_dia": 14.4, "ferritina_serica_ng_ml": 28.7, "proteina_c_reactiva_mg_l": 2.08}, {"id_participante": "P0018", "edad": 19.0, "sexo": "Masculino", "region": "Centro", "imc": 24.3, "dieta_hierro_mg_dia": 13.3, "ferritina_serica_ng_ml": 29.1, "proteina_c_reactiva_mg_l": 3.15}, {"id_participante": "P0134", "edad": 20.0, "sexo": "Masculino", "region": "Sur", "imc": null, "dieta_hierro_mg_dia": 12.6, "ferritina_serica_ng_ml": 65.9, "proteina_c_reactiva_mg_l": 1.76}, {"id_participante": "P0198", "edad": 41.0, "sexo": "Femenino", "region": "Sur", "imc": 27.2, "dieta_hierro_mg_dia": 18.2, "ferritina_serica_ng_ml": 13.5, "proteina_c_reactiva_mg_l": 2.17}, {"id_participante": "P0200", "edad": null, "sexo": "Masculino", "region": "Sur", "imc": 27.2, "dieta_hierro_mg_dia": 16.4, "ferritina_serica_ng_ml": 44.7, "proteina_c_reactiva_mg_l": 1.22}, {"id_participante": "P0148", "edad": 56.0, "sexo": "Femenino", "region": "Centro", "imc": 31.0, "dieta_hierro_mg_dia": 15.5, "ferritina_serica_ng_ml": 26.0, "proteina_c_reactiva_mg_l": 2.61}, {"id_participante": "P0087", "edad": 43.0, "sexo": "Femenino", "region": null, "imc": 22.5, "dieta_hierro_mg_dia": 12.4, "ferritina_serica_ng_ml": 44.4, "proteina_c_reactiva_mg_l": 1.67}, {"id_participante": "P0063", "edad": 19.0, "sexo": "Masculino", "region": "Norte", "imc": 23.4, "dieta_hierro_mg_dia": 13.1, "ferritina_serica_ng_ml": 33.4, "proteina_c_reactiva_mg_l": 1.71}, {"id_participante": "P0065", "edad": 59.0, "sexo": "Masculino", "region": "Sur", "imc": 24.1, "dieta_hierro_mg_dia": 7.6, "ferritina_serica_ng_ml": 31.3, "proteina_c_reactiva_mg_l": 2.39}, {"id_participante": "P0027", "edad": 39.0, "sexo": "Femenino", "region": "Norte", "imc": 25.4, "dieta_hierro_mg_dia": 16.4, "ferritina_serica_ng_ml": 42.7, "proteina_c_reactiva_mg_l": 3.51}, {"id_participante": "P0117", "edad": null, "sexo": "Femenino", "region": "Norte", "imc": 33.9, "dieta_hierro_mg_dia": 12.2, "ferritina_serica_ng_ml": 19.2, "proteina_c_reactiva_mg_l": 4.75}, {"id_participante": "P0042", "edad": 56.0, "sexo": "Femenino", "region": "Centro", "imc": 29.0, "dieta_hierro_mg_dia": 18.9, "ferritina_serica_ng_ml": 22.8, "proteina_c_reactiva_mg_l": 0.61}, {"id_participante": "P0053", "edad": 24.0, "sexo": "Femenino", "region": "Centro", "imc": 25.4, "dieta_hierro_mg_dia": 15.7, "ferritina_serica_ng_ml": 46.6, "proteina_c_reactiva_mg_l": 2.53}, {"id_participante": "P0164", "edad": 45.0, "sexo": "Masculino", "region": "Norte", "imc": 29.9, "dieta_hierro_mg_dia": null, "ferritina_serica_ng_ml": 47.8, "proteina_c_reactiva_mg_l": 2.6}, {"id_participante": "P0195", "edad": 32.0, "sexo": "Masculino", "region": "Sur", "imc": 36.8, "dieta_hierro_mg_dia": null, "ferritina_serica_ng_ml": 29.0, "proteina_c_reactiva_mg_l": 10.94}, {"id_participante": "P0107", "edad": 52.0, "sexo": "Masculino", "region": "Norte", "imc": null, "dieta_hierro_mg_dia": 17.0, "ferritina_serica_ng_ml": 38.7, "proteina_c_reactiva_mg_l": 1.56}, {"id_participante": "P0082", "edad": 33.0, "sexo": "Femenino", "region": "Centro", "imc": 28.4, "dieta_hierro_mg_dia": 17.6, "ferritina_serica_ng_ml": 23.2, "proteina_c_reactiva_mg_l": 0.1}, {"id_participante": "P0008", "edad": 36.0, "sexo": "Masculino", "region": "Sur", "imc": 26.1, "dieta_hierro_mg_dia": 13.0, "ferritina_serica_ng_ml": 33.4, "proteina_c_reactiva_mg_l": 0.32}, {"id_participante": "P0092", "edad": 32.0, "sexo": "Masculino", "region": "Centro", "imc": null, "dieta_hierro_mg_dia": 16.8, "ferritina_serica_ng_ml": null, "proteina_c_reactiva_mg_l": 2.05}, {"id_participante": "P0149", "edad": 49.0, "sexo": "Femenino", "region": "Sur", "imc": 27.3, "dieta_hierro_mg_dia": 16.6, "ferritina_serica_ng_ml": 30.9, "proteina_c_reactiva_mg_l": 0.94}, {"id_participante": "P0071", "edad": 51.0, "sexo": "Femenino", "region": "Sur", "imc": 31.2, "dieta_hierro_mg_dia": 11.1, "ferritina_serica_ng_ml": 23.7, "proteina_c_reactiva_mg_l": 11.62}, {"id_participante": "P0187", "edad": 25.0, "sexo": "Masculino", "region": "Sur", "imc": 35.4, "dieta_hierro_mg_dia": 16.0, "ferritina_serica_ng_ml": 23.1, "proteina_c_reactiva_mg_l": 10.72}, {"id_participante": "P0129", "edad": null, "sexo": "Masculino", "region": "Sur", "imc": 23.8, "dieta_hierro_mg_dia": 14.2, "ferritina_serica_ng_ml": 29.4, "proteina_c_reactiva_mg_l": 3.53}, {"id_participante": "P0009", "edad": 40.0, "sexo": "Masculino", "region": "Centro", "imc": 26.5, "dieta_hierro_mg_dia": 16.2, "ferritina_serica_ng_ml": 34.6, "proteina_c_reactiva_mg_l": 2.45}, {"id_participante": "P0121", "edad": 3.0, "sexo": "Femenino", "region": "Centro", "imc": 23.5, "dieta_hierro_mg_dia": null, "ferritina_serica_ng_ml": 52.3, "proteina_c_reactiva_mg_l": 0.56}, {"id_participante": "P0080", "edad": 57.0, "sexo": "Femenino", "region": "Sureste", "imc": 30.0, "dieta_hierro_mg_dia": 9.5, "ferritina_serica_ng_ml": null, "proteina_c_reactiva_mg_l": 1.26}, {"id_participante": "P0140", "edad": 44.0, "sexo": "Masculino", "region": "Centro", "imc": 31.5, "dieta_hierro_mg_dia": 20.0, "ferritina_serica_ng_ml": 2.8, "proteina_c_reactiva_mg_l": 3.44}, {"id_participante": "P0144", "edad": 43.0, "sexo": "Masculino", "region": null, "imc": 25.1, "dieta_hierro_mg_dia": 15.1, "ferritina_serica_ng_ml": 42.6, "proteina_c_reactiva_mg_l": 1.57}, {"id_participante": "P0030", "edad": 44.0, "sexo": "Femenino", "region": "Sureste", "imc": 22.8, "dieta_hierro_mg_dia": 14.4, "ferritina_serica_ng_ml": 28.8, "proteina_c_reactiva_mg_l": 0.1}, {"id_participante": "P0004", "edad": 60.0, "sexo": "Femenino", "region": "Sur", "imc": 22.9, "dieta_hierro_mg_dia": 18.3, "ferritina_serica_ng_ml": 25.5, "proteina_c_reactiva_mg_l": 0.24}, {"id_participante": "P0040", "edad": 38.0, "sexo": "Femenino", "region": "Sur", "imc": 28.3, "dieta_hierro_mg_dia": 10.8, "ferritina_serica_ng_ml": null, "proteina_c_reactiva_mg_l": 2.59}, {"id_participante": "P0051", "edad": 45.0, "sexo": "Masculino", "region": "Sur", "imc": 32.3, "dieta_hierro_mg_dia": 20.5, "ferritina_serica_ng_ml": 22.9, "proteina_c_reactiva_mg_l": 14.35}, {"id_participante": "P0078", "edad": null, "sexo": "Femenino", "region": "Norte", "imc": 32.7, "dieta_hierro_mg_dia": 11.9, "ferritina_serica_ng_ml": 29.6, "proteina_c_reactiva_mg_l": 10.4}, {"id_participante": "P0196", "edad": null, "sexo": "Femenino", "region": null, "imc": 26.0, "dieta_hierro_mg_dia": 12.5, "ferritina_serica_ng_ml": 18.9, "proteina_c_reactiva_mg_l": 1.31}, {"id_participante": "P0112", "edad": 58.0, "sexo": "Femenino", "region": "Sur", "imc": 27.9, "dieta_hierro_mg_dia": 13.9, "ferritina_serica_ng_ml": 48.1, "proteina_c_reactiva_mg_l": 1.04}, {"id_participante": "P0130", "edad": 52.0, "sexo": "Femenino", "region": "Sur", "imc": 33.8, "dieta_hierro_mg_dia": 17.1, "ferritina_serica_ng_ml": 2.0, "proteina_c_reactiva_mg_l": 5.2}, {"id_participante": "P0055", "edad": 25.0, "sexo": "Masculino", "region": "Centro", "imc": 27.9, "dieta_hierro_mg_dia": 10.7, "ferritina_serica_ng_ml": 27.2, "proteina_c_reactiva_mg_l": 2.24}, {"id_participante": "P0044", "edad": 21.0, "sexo": "Masculino", "region": "Centro", "imc": 27.4, "dieta_hierro_mg_dia": 12.2, "ferritina_serica_ng_ml": null, "proteina_c_reactiva_mg_l": 1.31}, {"id_participante": "P0159", "edad": 53.0, "sexo": "Femenino", "region": "Norte", "imc": 36.5, "dieta_hierro_mg_dia": 12.9, "ferritina_serica_ng_ml": 20.3, "proteina_c_reactiva_mg_l": 6.78}, {"id_participante": "P0049", "edad": 19.0, "sexo": "Femenino", "region": "Centro", "imc": 19.1, "dieta_hierro_mg_dia": 18.3, "ferritina_serica_ng_ml": 30.2, "proteina_c_reactiva_mg_l": 1.79}, {"id_participante": "P0170", "edad": 45.0, "sexo": "Masculino", "region": "Norte", "imc": 16.7, "dieta_hierro_mg_dia": 13.8, "ferritina_serica_ng_ml": null, "proteina_c_reactiva_mg_l": 1.81}, {"id_participante": "P0060", "edad": 53.0, "sexo": "Femenino", "region": "Norte", "imc": 25.2, "dieta_hierro_mg_dia": null, "ferritina_serica_ng_ml": 60.6, "proteina_c_reactiva_mg_l": 1.07}, {"id_participante": "P0054", "edad": 61.0, "sexo": "Masculino", "region": "Sur", "imc": 29.3, "dieta_hierro_mg_dia": 12.7, "ferritina_serica_ng_ml": 25.7, "proteina_c_reactiva_mg_l": 0.56}, {"id_participante": "P0021", "edad": 47.0, "sexo": "Masculino", "region": "Sureste", "imc": 19.3, "dieta_hierro_mg_dia": 17.2, "ferritina_serica_ng_ml": 32.8, "proteina_c_reactiva_mg_l": 1.21}, {"id_participante": "P0125", "edad": 57.0, "sexo": "Femenino", "region": "Sur", "imc": 28.6, "dieta_hierro_mg_dia": 10.0, "ferritina_serica_ng_ml": 31.5, "proteina_c_reactiva_mg_l": 1.65}, {"id_participante": "P0165", "edad": 19.0, "sexo": "Femenino", "region": "Norte", "imc": 19.4, "dieta_hierro_mg_dia": 17.9, "ferritina_serica_ng_ml": 37.3, "proteina_c_reactiva_mg_l": 2.93}, {"id_participante": "P0077", "edad": 25.0, "sexo": "Femenino", "region": "Centro", "imc": 14.2, "dieta_hierro_mg_dia": 13.2, "ferritina_serica_ng_ml": null, "proteina_c_reactiva_mg_l": 1.68}, {"id_participante": "P0185", "edad": 56.0, "sexo": "Masculino", "region": null, "imc": 25.8, "dieta_hierro_mg_dia": 16.5, "ferritina_serica_ng_ml": 15.8, "proteina_c_reactiva_mg_l": 1.56}, {"id_participante": "P0108", "edad": 50.0, "sexo": "Femenino", "region": "Norte", "imc": 30.2, "dieta_hierro_mg_dia": 12.1, "ferritina_serica_ng_ml": 26.1, "proteina_c_reactiva_mg_l": 7.58}, {"id_participante": "P0013", "edad": 53.0, "sexo": "Femenino", "region": "Centro", "imc": 35.4, "dieta_hierro_mg_dia": 16.7, "ferritina_serica_ng_ml": 24.5, "proteina_c_reactiva_mg_l": 5.49}, {"id_participante": "P0017", "edad": 39.0, "sexo": "Masculino", "region": "Norte", "imc": 25.2, "dieta_hierro_mg_dia": 17.5, "ferritina_serica_ng_ml": 32.5, "proteina_c_reactiva_mg_l": 3.32}, {"id_participante": "P0048", "edad": 43.0, "sexo": "Masculino", "region": "Centro", "imc": 20.2, "dieta_hierro_mg_dia": 9.8, "ferritina_serica_ng_ml": 40.8, "proteina_c_reactiva_mg_l": 1.04}, {"id_participante": "P0163", "edad": 39.0, "sexo": "Masculino", "region": "Centro", "imc": 29.3, "dieta_hierro_mg_dia": 11.1, "ferritina_serica_ng_ml": 51.6, "proteina_c_reactiva_mg_l": 2.63}, {"id_participante": "P0120", "edad": 40.0, "sexo": "Femenino", "region": "Sur", "imc": 25.1, "dieta_hierro_mg_dia": 10.2, "ferritina_serica_ng_ml": 30.4, "proteina_c_reactiva_mg_l": 0.14}, {"id_participante": "P0022", "edad": 55.0, "sexo": "Masculino", "region": "Norte", "imc": 28.8, "dieta_hierro_mg_dia": 20.1, "ferritina_serica_ng_ml": 36.9, "proteina_c_reactiva_mg_l": 1.29}, {"id_participante": "P0147", "edad": 49.0, "sexo": "Femenino", "region": "Centro", "imc": 28.2, "dieta_hierro_mg_dia": 11.2, "ferritina_serica_ng_ml": 44.5, "proteina_c_reactiva_mg_l": 2.34}, {"id_participante": "P0191", "edad": 50.0, "sexo": "Masculino", "region": "Centro", "imc": null, "dieta_hierro_mg_dia": 15.7, "ferritina_serica_ng_ml": 40.9, "proteina_c_reactiva_mg_l": 2.89}, {"id_participante": "P0131", "edad": 54.0, "sexo": "Masculino", "region": "Centro", "imc": 23.3, "dieta_hierro_mg_dia": 12.6, "ferritina_serica_ng_ml": 21.9, "proteina_c_reactiva_mg_l": 2.12}, {"id_participante": "P0206", "edad": 19.0, "sexo": "Femenino", "region": "Centro", "imc": 28.3, "dieta_hierro_mg_dia": 13.7, "ferritina_serica_ng_ml": 30.5, "proteina_c_reactiva_mg_l": 1.26}, {"id_participante": "P0074", "edad": 31.0, "sexo": "Masculino", "region": "Centro", "imc": 19.9, "dieta_hierro_mg_dia": 15.1, "ferritina_serica_ng_ml": 38.2, "proteina_c_reactiva_mg_l": 2.06}, {"id_participante": "P0031", "edad": 59.0, "sexo": "Femenino", "region": "Sur", "imc": 29.0, "dieta_hierro_mg_dia": null, "ferritina_serica_ng_ml": 42.5, "proteina_c_reactiva_mg_l": 0.48}, {"id_participante": "P0162", "edad": 24.0, "sexo": "Femenino", "region": "Norte", "imc": 34.1, "dieta_hierro_mg_dia": 12.3, "ferritina_serica_ng_ml": 15.6, "proteina_c_reactiva_mg_l": 7.81}, {"id_participante": "P0034", "edad": 32.0, "sexo": "Femenino", "region": null, "imc": 37.1, "dieta_hierro_mg_dia": 15.7, "ferritina_serica_ng_ml": 17.2, "proteina_c_reactiva_mg_l": 8.87}, {"id_participante": "P0161", "edad": 49.0, "sexo": "Femenino", "region": null, "imc": null, "dieta_hierro_mg_dia": 10.1, "ferritina_serica_ng_ml": 30.2, "proteina_c_reactiva_mg_l": 2.03}, {"id_participante": "P0217", "edad": 43.0, "sexo": "Femenino", "region": "Sur", "imc": 19.2, "dieta_hierro_mg_dia": 15.1, "ferritina_serica_ng_ml": 13.8, "proteina_c_reactiva_mg_l": 1.22}, {"id_participante": "P0156", "edad": 32.0, "sexo": "Masculino", "region": "Centro", "imc": 36.8, "dieta_hierro_mg_dia": 14.9, "ferritina_serica_ng_ml": 22.5, "proteina_c_reactiva_mg_l": 4.93}, {"id_participante": "P0199", "edad": 58.0, "sexo": "Femenino", "region": "Sureste", "imc": 27.9, "dieta_hierro_mg_dia": 10.3, "ferritina_serica_ng_ml": 42.1, "proteina_c_reactiva_mg_l": 2.16}, {"id_participante": "P0124", "edad": 61.0, "sexo": "Masculino", "region": "Centro", "imc": null, "dieta_hierro_mg_dia": 12.7, "ferritina_serica_ng_ml": 13.3, "proteina_c_reactiva_mg_l": 4.77}, {"id_participante": "P0035", "edad": 64.0, "sexo": "Femenino", "region": "Sur", "imc": 22.7, "dieta_hierro_mg_dia": 13.7, "ferritina_serica_ng_ml": 55.2, "proteina_c_reactiva_mg_l": 1.23}, {"id_participante": "P0101", "edad": null, "sexo": "Masculino", "region": "Norte", "imc": 24.5, "dieta_hierro_mg_dia": 21.6, "ferritina_serica_ng_ml": null, "proteina_c_reactiva_mg_l": 2.63}, {"id_participante": "P0150", "edad": 21.0, "sexo": "Femenino", "region": "Norte", "imc": 28.2, "dieta_hierro_mg_dia": 12.9, "ferritina_serica_ng_ml": 35.8, "proteina_c_reactiva_mg_l": 1.18}, {"id_participante": "P0174", "edad": 47.0, "sexo": "Femenino", "region": "Centro", "imc": 22.9, "dieta_hierro_mg_dia": 20.2, "ferritina_serica_ng_ml": null, "proteina_c_reactiva_mg_l": 2.47}, {"id_participante": "P0220", "edad": 49.0, "sexo": "Femenino", "region": "Norte", "imc": null, "dieta_hierro_mg_dia": 9.4, "ferritina_serica_ng_ml": 35.9, "proteina_c_reactiva_mg_l": 0.1}, {"id_participante": "P0205", "edad": 34.0, "sexo": "Femenino", "region": "Sur", "imc": 35.9, "dieta_hierro_mg_dia": 10.6, "ferritina_serica_ng_ml": 10.8, "proteina_c_reactiva_mg_l": 8.78}, {"id_participante": "P0062", "edad": 21.0, "sexo": "Femenino", "region": "Norte", "imc": 31.2, "dieta_hierro_mg_dia": 11.9, "ferritina_serica_ng_ml": 18.0, "proteina_c_reactiva_mg_l": 9.65}, {"id_participante": "P0036", "edad": 61.0, "sexo": "Femenino", "region": "Centro", "imc": 26.9, "dieta_hierro_mg_dia": 21.1, "ferritina_serica_ng_ml": 27.6, "proteina_c_reactiva_mg_l": 1.41}, {"id_participante": "P0011", "edad": 28.0, "sexo": "Femenino", "region": "Sureste", "imc": 27.3, "dieta_hierro_mg_dia": 13.0, "ferritina_serica_ng_ml": 29.6, "proteina_c_reactiva_mg_l": 1.2}, {"id_participante": "P0215", "edad": 19.0, "sexo": "Femenino", "region": "Sur", "imc": 28.3, "dieta_hierro_mg_dia": null, "ferritina_serica_ng_ml": 19.6, "proteina_c_reactiva_mg_l": 3.48}, {"id_participante": "P0072", "edad": 27.0, "sexo": "Femenino", "region": null, "imc": 32.7, "dieta_hierro_mg_dia": 15.4, "ferritina_serica_ng_ml": 7.3, "proteina_c_reactiva_mg_l": 7.2}, {"id_participante": "P0218", "edad": 49.0, "sexo": "Femenino", "region": "Sur", "imc": 28.0, "dieta_hierro_mg_dia": 13.9, "ferritina_serica_ng_ml": 37.9, "proteina_c_reactiva_mg_l": 0.5}, {"id_participante": "P0204", "edad": 54.0, "sexo": "Masculino", "region": "Centro", "imc": null, "dieta_hierro_mg_dia": 19.1, "ferritina_serica_ng_ml": 58.1, "proteina_c_reactiva_mg_l": 2.68}, {"id_participante": "P0094", "edad": 18.0, "sexo": "Femenino", "region": "Norte", "imc": 24.5, "dieta_hierro_mg_dia": 9.9, "ferritina_serica_ng_ml": 28.4, "proteina_c_reactiva_mg_l": 0.92}, {"id_participante": "P0160", "edad": 30.0, "sexo": "Masculino", "region": "Sureste", "imc": 28.1, "dieta_hierro_mg_dia": 10.6, "ferritina_serica_ng_ml": 41.2, "proteina_c_reactiva_mg_l": 4.43}, {"id_participante": "P0119", "edad": 50.0, "sexo": "Femenino", "region": "Centro", "imc": 32.8, "dieta_hierro_mg_dia": 12.4, "ferritina_serica_ng_ml": 18.8, "proteina_c_reactiva_mg_l": 3.18}, {"id_participante": "P0145", "edad": 59.0, "sexo": "Femenino", "region": "Norte", "imc": 32.7, "dieta_hierro_mg_dia": 12.5, "ferritina_serica_ng_ml": 2.0, "proteina_c_reactiva_mg_l": 6.99}, {"id_participante": "P0002", "edad": 46.0, "sexo": "Femenino", "region": "Norte", "imc": 22.1, "dieta_hierro_mg_dia": null, "ferritina_serica_ng_ml": 30.3, "proteina_c_reactiva_mg_l": 1.57}, {"id_participante": "P0207", "edad": 19.0, "sexo": "Femenino", "region": "Centro", "imc": 29.0, "dieta_hierro_mg_dia": 11.0, "ferritina_serica_ng_ml": 36.5, "proteina_c_reactiva_mg_l": 1.74}, {"id_participante": "P0084", "edad": 35.0, "sexo": "Femenino", "region": "Norte", "imc": 28.1, "dieta_hierro_mg_dia": 10.9, "ferritina_serica_ng_ml": 51.2, "proteina_c_reactiva_mg_l": 0.1}, {"id_participante": "P0214", "edad": 36.0, "sexo": "Femenino", "region": "Centro", "imc": 24.6, "dieta_hierro_mg_dia": 12.5, "ferritina_serica_ng_ml": 10.4, "proteina_c_reactiva_mg_l": 3.48}, {"id_participante": "P0088", "edad": 42.0, "sexo": "Femenino", "region": "Centro", "imc": 34.6, "dieta_hierro_mg_dia": 12.5, "ferritina_serica_ng_ml": 17.1, "proteina_c_reactiva_mg_l": 8.49}, {"id_participante": "P0138", "edad": 31.0, "sexo": "Masculino", "region": null, "imc": 25.7, "dieta_hierro_mg_dia": 15.8, "ferritina_serica_ng_ml": 20.9, "proteina_c_reactiva_mg_l": 2.65}, {"id_participante": "P0005", "edad": 25.0, "sexo": "Masculino", "region": "Centro", "imc": 36.8, "dieta_hierro_mg_dia": 14.3, "ferritina_serica_ng_ml": null, "proteina_c_reactiva_mg_l": 4.7}, {"id_participante": "P0039", "edad": 24.0, "sexo": "Femenino", "region": "Sur", "imc": 19.8, "dieta_hierro_mg_dia": 10.2, "ferritina_serica_ng_ml": null, "proteina_c_reactiva_mg_l": 3.55}, {"id_participante": "P0194", "edad": 41.0, "sexo": "Femenino", "region": "Centro", "imc": 25.6, "dieta_hierro_mg_dia": 16.4, "ferritina_serica_ng_ml": 22.0, "proteina_c_reactiva_mg_l": 0.98}, {"id_participante": "P0113", "edad": 45.0, "sexo": "Masculino", "region": null, "imc": 34.0, "dieta_hierro_mg_dia": 11.2, "ferritina_serica_ng_ml": 24.7, "proteina_c_reactiva_mg_l": 12.67}, {"id_participante": "P0182", "edad": 30.0, "sexo": "Femenino", "region": null, "imc": 29.5, "dieta_hierro_mg_dia": 13.3, "ferritina_serica_ng_ml": 29.5, "proteina_c_reactiva_mg_l": 1.88}, {"id_participante": "P0184", "edad": 20.0, "sexo": "Femenino", "region": "Norte", "imc": 32.2, "dieta_hierro_mg_dia": 12.3, "ferritina_serica_ng_ml": 27.6, "proteina_c_reactiva_mg_l": 8.53}, {"id_participante": "P0153", "edad": 40.0, "sexo": "Femenino", "region": "Norte", "imc": 28.3, "dieta_hierro_mg_dia": 18.4, "ferritina_serica_ng_ml": 48.2, "proteina_c_reactiva_mg_l": 2.9}, {"id_participante": "P0057", "edad": 52.0, "sexo": "Masculino", "region": "Sur", "imc": 33.6, "dieta_hierro_mg_dia": 10.6, "ferritina_serica_ng_ml": 25.6, "proteina_c_reactiva_mg_l": 10.56}, {"id_participante": "P0070", "edad": 61.0, "sexo": "Femenino", "region": "Centro", "imc": 29.7, "dieta_hierro_mg_dia": 16.4, "ferritina_serica_ng_ml": 21.6, "proteina_c_reactiva_mg_l": 1.52}, {"id_participante": "P0192", "edad": 59.0, "sexo": "Femenino", "region": "Centro", "imc": 22.9, "dieta_hierro_mg_dia": 20.8, "ferritina_serica_ng_ml": 36.2, "proteina_c_reactiva_mg_l": 0.38}, {"id_participante": "P0045", "edad": 42.0, "sexo": "Femenino", "region": "Norte", "imc": null, "dieta_hierro_mg_dia": 15.1, "ferritina_serica_ng_ml": 29.6, "proteina_c_reactiva_mg_l": 0.61}, {"id_participante": "P0189", "edad": 26.0, "sexo": "Femenino", "region": "Norte", "imc": 30.9, "dieta_hierro_mg_dia": 12.9, "ferritina_serica_ng_ml": 18.9, "proteina_c_reactiva_mg_l": 6.57}, {"id_participante": "P0020", "edad": 61.0, "sexo": "Femenino", "region": "Sur", "imc": 28.1, "dieta_hierro_mg_dia": 12.5, "ferritina_serica_ng_ml": null, "proteina_c_reactiva_mg_l": 1.06}, {"id_participante": "P0007", "edad": 56.0, "sexo": "Femenino", "region": "Sur", "imc": 29.6, "dieta_hierro_mg_dia": 12.6, "ferritina_serica_ng_ml": 36.9, "proteina_c_reactiva_mg_l": 1.72}, {"id_participante": "P0056", "edad": 64.0, "sexo": "Masculino", "region": "Sur", "imc": 31.1, "dieta_hierro_mg_dia": 13.3, "ferritina_serica_ng_ml": 23.0, "proteina_c_reactiva_mg_l": 5.17}, {"id_participante": "P0076", "edad": 32.0, "sexo": "Masculino", "region": null, "imc": 26.8, "dieta_hierro_mg_dia": 20.1, "ferritina_serica_ng_ml": 25.0, "proteina_c_reactiva_mg_l": 3.03}, {"id_participante": "P0001", "edad": 56.0, "sexo": "Femenino", "region": "Centro", "imc": 34.8, "dieta_hierro_mg_dia": 16.1, "ferritina_serica_ng_ml": null, "proteina_c_reactiva_mg_l": 6.66}, {"id_participante": "P0173", "edad": 37.0, "sexo": "Masculino", "region": "Centro", "imc": 35.1, "dieta_hierro_mg_dia": 17.0, "ferritina_serica_ng_ml": 19.9, "proteina_c_reactiva_mg_l": 7.25}, {"id_participante": "P0136", "edad": 22.0, "sexo": "Femenino", "region": "Sur", "imc": 25.7, "dieta_hierro_mg_dia": 13.5, "ferritina_serica_ng_ml": 27.4, "proteina_c_reactiva_mg_l": 0.1}, {"id_participante": "P0128", "edad": 52.0, "sexo": "Femenino", "region": "Sur", "imc": 30.0, "dieta_hierro_mg_dia": 12.3, "ferritina_serica_ng_ml": 38.8, "proteina_c_reactiva_mg_l": 2.71}, {"id_participante": "P0177", "edad": 42.0, "sexo": "Femenino", "region": "Sur", "imc": null, "dieta_hierro_mg_dia": 11.7, "ferritina_serica_ng_ml": 27.1, "proteina_c_reactiva_mg_l": 4.79}, {"id_participante": "P0069", "edad": 43.0, "sexo": "Femenino", "region": "Sureste", "imc": 30.2, "dieta_hierro_mg_dia": 16.4, "ferritina_serica_ng_ml": 25.3, "proteina_c_reactiva_mg_l": 7.48}, {"id_participante": "P0168", "edad": 23.0, "sexo": "Masculino", "region": "Centro", "imc": 20.1, "dieta_hierro_mg_dia": null, "ferritina_serica_ng_ml": 33.6, "proteina_c_reactiva_mg_l": 3.02}, {"id_participante": "P0137", "edad": 43.0, "sexo": "Femenino", "region": "Sureste", "imc": null, "dieta_hierro_mg_dia": 11.6, "ferritina_serica_ng_ml": 30.9, "proteina_c_reactiva_mg_l": 2.6}, {"id_participante": "P0043", "edad": 35.0, "sexo": "Femenino", "region": null, "imc": 27.5, "dieta_hierro_mg_dia": 14.8, "ferritina_serica_ng_ml": 35.9, "proteina_c_reactiva_mg_l": 2.74}, {"id_participante": "P0111", "edad": 56.0, "sexo": "Femenino", "region": "Centro", "imc": 20.8, "dieta_hierro_mg_dia": 10.8, "ferritina_serica_ng_ml": null, "proteina_c_reactiva_mg_l": 1.29}, {"id_participante": "P0090", "edad": 58.0, "sexo": "Masculino", "region": "Norte", "imc": 28.0, "dieta_hierro_mg_dia": 11.8, "ferritina_serica_ng_ml": 35.5, "proteina_c_reactiva_mg_l": 0.95}, {"id_participante": "P0073", "edad": 53.0, "sexo": "Masculino", "region": null, "imc": 24.3, "dieta_hierro_mg_dia": 18.7, "ferritina_serica_ng_ml": 20.1, "proteina_c_reactiva_mg_l": 1.77}, {"id_participante": "P0024", "edad": 38.0, "sexo": "Masculino", "region": "Norte", "imc": 31.3, "dieta_hierro_mg_dia": 10.7, "ferritina_serica_ng_ml": 12.3, "proteina_c_reactiva_mg_l": 5.5}, {"id_participante": "P0143", "edad": 32.0, "sexo": "Femenino", "region": "Norte", "imc": 34.0, "dieta_hierro_mg_dia": 15.3, "ferritina_serica_ng_ml": 27.8, "proteina_c_reactiva_mg_l": 7.73}, {"id_participante": "P0186", "edad": 23.0, "sexo": "Masculino", "region": "Centro", "imc": 26.6, "dieta_hierro_mg_dia": 12.3, "ferritina_serica_ng_ml": 28.4, "proteina_c_reactiva_mg_l": 1.91}, {"id_participante": "P0093", "edad": 62.0, "sexo": "Femenino", "region": "Sureste", "imc": 22.1, "dieta_hierro_mg_dia": 17.1, "ferritina_serica_ng_ml": 46.8, "proteina_c_reactiva_mg_l": 0.94}, {"id_participante": "P0104", "edad": 34.0, "sexo": "Femenino", "region": "Sur", "imc": 19.0, "dieta_hierro_mg_dia": 13.0, "ferritina_serica_ng_ml": 43.8, "proteina_c_reactiva_mg_l": 2.22}, {"id_participante": "P0152", "edad": 54.0, "sexo": "Masculino", "region": "Centro", "imc": null, "dieta_hierro_mg_dia": 10.4, "ferritina_serica_ng_ml": 16.6, "proteina_c_reactiva_mg_l": 6.03}, {"id_participante": "P0212", "edad": 50.0, "sexo": "Femenino", "region": "Sur", "imc": 18.7, "dieta_hierro_mg_dia": 17.3, "ferritina_serica_ng_ml": 42.7, "proteina_c_reactiva_mg_l": 0.42}, {"id_participante": "P0068", "edad": 35.0, "sexo": "Masculino", "region": "Norte", "imc": 29.4, "dieta_hierro_mg_dia": 17.2, "ferritina_serica_ng_ml": 44.4, "proteina_c_reactiva_mg_l": 1.7}, {"id_participante": "P0026", "edad": null, "sexo": "Masculino", "region": "Norte", "imc": 20.3, "dieta_hierro_mg_dia": 14.3, "ferritina_serica_ng_ml": null, "proteina_c_reactiva_mg_l": 2.47}, {"id_participante": "P0197", "edad": 49.0, "sexo": "Masculino", "region": "Sur", "imc": 20.9, "dieta_hierro_mg_dia": 15.1, "ferritina_serica_ng_ml": 40.0, "proteina_c_reactiva_mg_l": 0.1}, {"id_participante": "P0176", "edad": 45.0, "sexo": "Femenino", "region": "Norte", "imc": 22.4, "dieta_hierro_mg_dia": 20.7, "ferritina_serica_ng_ml": 27.9, "proteina_c_reactiva_mg_l": 0.92}];
+const PRE = {
+  "validation": {
+    "n_filas": 220,
+    "n_ids_unicos": 220,
+    "duplicados_exactos": 0,
+    "duplicados_id": 0,
+    "missing": {
+      "id_participante": 0,
+      "edad": 14,
+      "sexo": 0,
+      "region": 19,
+      "imc": 21,
+      "dieta_hierro_mg_dia": 13,
+      "ferritina_serica_ng_ml": 19,
+      "proteina_c_reactiva_mg_l": 0
+    },
+    "missing_pct": {
+      "id_participante": 0.0,
+      "edad": 6.36,
+      "sexo": 0.0,
+      "region": 8.64,
+      "imc": 9.55,
+      "dieta_hierro_mg_dia": 5.91,
+      "ferritina_serica_ng_ml": 8.64,
+      "proteina_c_reactiva_mg_l": 0.0
+    },
+    "rangos": {
+      "edad": [
+        3.0,
+        64.0
+      ],
+      "imc": [
+        14.2,
+        43.3
+      ],
+      "dieta_hierro_mg_dia": [
+        5.7,
+        21.6
+      ],
+      "ferritina_serica_ng_ml": [
+        2.0,
+        65.9
+      ],
+      "proteina_c_reactiva_mg_l": [
+        0.1,
+        14.35
+      ]
+    },
+    "sexo_categorias": {
+      "Femenino": 124,
+      "Masculino": 96
+    },
+    "region_categorias": {
+      "Centro": 75,
+      "Sur": 57,
+      "Norte": 51,
+      "nan": 19,
+      "Sureste": 18
+    },
+    "menores_18": 2,
+    "skew": {
+      "imc": 0.177,
+      "ferritina_serica_ng_ml": 0.171,
+      "proteina_c_reactiva_mg_l": 1.65
+    },
+    "shapiro_p": {
+      "imc": 0.6653374011333422,
+      "ferritina_serica_ng_ml": 0.5917030133042009,
+      "proteina_c_reactiva_mg_l": 8.273921216438807e-16
+    }
+  },
+  "sensitivity": {
+    "principal": {
+      "beta": -0.4322,
+      "ci": [
+        -0.8839,
+        0.0196
+      ],
+      "p": 0.06063754633587532,
+      "n": 156,
+      "r2": 0.2044
+    },
+    "excl_menores18": {
+      "beta": -0.427,
+      "ci": [
+        -0.8776,
+        0.0235
+      ],
+      "p": 0.06302073844033475,
+      "n": 154,
+      "r2": 0.2022
+    },
+    "excl_pcr_alta": {
+      "beta": -0.4265,
+      "ci": [
+        -0.8811,
+        0.0282
+      ],
+      "p": 0.06576832345130931,
+      "n": 149,
+      "r2": 0.2564
+    },
+    "log_ferritina": {
+      "beta": -0.0208,
+      "ci": [
+        -0.04117,
+        -0.00043
+      ],
+      "p": 0.04536539745537932,
+      "n": 156,
+      "r2": 0.1778,
+      "nota": "coef en escala log; %cambio aprox = (exp(beta)-1)*100",
+      "pct_cambio_por_unidad_imc": -2.06
+    },
+    "crudo_muestra_maxima": {
+      "beta": -0.9174,
+      "ci": [
+        -1.2431,
+        -0.5918
+      ],
+      "p": 9.627404110274458e-08,
+      "n": 182,
+      "r2": 0.1466
+    }
+  },
+  "diagnostics": {
+    "shapiro_resid_adj_p": 0.4032,
+    "breusch_pagan_p": 0.8573,
+    "cooks_d_max": 0.0376,
+    "cooks_d_n_influential": 9,
+    "cooks_d_threshold": 0.02564,
+    "vif": {
+      "imc": 1.784,
+      "proteina_c_reactiva_mg_l": 1.755,
+      "edad": 1.078,
+      "sexo_Masculino": 1.031,
+      "region_Norte": 1.265,
+      "region_Sur": 1.316,
+      "region_Sureste": 1.147
+    },
+    "quadratic_imc_p": 0.7914,
+    "shapiro_log_resid_p": 6.5e-12,
+    "aic_linear": 1198.67,
+    "bic_linear": 1223.07,
+    "aic_log": 231.75,
+    "bic_log": 256.15
+  },
+  "correlations": {
+    "imc_ferritina": {
+      "pearson": {
+        "r": -0.383,
+        "p": 9.63e-08,
+        "ci": [
+          -0.5,
+          -0.251
+        ],
+        "n": 182
+      },
+      "spearman": {
+        "r": -0.419,
+        "p": 4.06e-09,
+        "ci": [
+          -0.532,
+          -0.291
+        ],
+        "n": 182
+      }
+    },
+    "imc_pcr": {
+      "pearson": {
+        "r": 0.624,
+        "p": 7.3e-23,
+        "ci": [
+          0.531,
+          0.702
+        ],
+        "n": 199
+      },
+      "spearman": {
+        "r": 0.515,
+        "p": 7.17e-15,
+        "ci": [
+          0.405,
+          0.61
+        ],
+        "n": 199
+      }
+    },
+    "pcr_ferritina": {
+      "pearson": {
+        "r": -0.41,
+        "p": 1.43e-09,
+        "ci": [
+          -0.519,
+          -0.288
+        ],
+        "n": 201
+      },
+      "spearman": {
+        "r": -0.388,
+        "p": 1.29e-08,
+        "ci": [
+          -0.499,
+          -0.264
+        ],
+        "n": 201
+      }
+    }
+  },
+  "group_comparison": {
+    "welch_anova_F": 48.2,
+    "welch_anova_p": 5.32e-16,
+    "kruskal_H": 55.86,
+    "kruskal_p": 7.42e-13,
+    "levene_p": 0.0292,
+    "groups": {
+      "<25": {
+        "n": 60,
+        "median": 35.7,
+        "iqr": [
+          28.275,
+          42.025
+        ],
+        "shapiro_p": 0.71
+      },
+      "25-29.9": {
+        "n": 74,
+        "median": 33.3,
+        "iqr": [
+          27.45,
+          42.675
+        ],
+        "shapiro_p": 0.562
+      },
+      ">=30": {
+        "n": 48,
+        "median": 20.05,
+        "iqr": [
+          15.35,
+          25.375
+        ],
+        "shapiro_p": 0.287
+      }
+    }
+  },
+  "models": {
+    "crudo": {
+      "beta": -0.8758,
+      "ci": [
+        -1.2202,
+        -0.5313
+      ],
+      "p": 1.4e-06,
+      "r2": 0.1407,
+      "n": 156
+    },
+    "mas_pcr": {
+      "beta": -0.4433,
+      "ci": [
+        -0.8796,
+        -0.007
+      ],
+      "p": 0.0465,
+      "r2": 0.1904,
+      "n": 156
+    },
+    "ajustado_completo": {
+      "beta": -0.4322,
+      "ci": [
+        -0.8839,
+        0.0196
+      ],
+      "p": 0.0606,
+      "r2": 0.2044,
+      "n": 156
+    },
+    "pct_cambio_crudo_a_pcr": -49.4,
+    "pct_cambio_crudo_a_completo": -50.7
+  }
+};
+</script>
+<script>
+// ============ Núcleo estadístico (vanilla JS) ============
+// Implementaciones numéricas estándar: log-gamma (Lanczos), beta incompleta
+// regularizada (para t-Student), gamma incompleta regularizada (para chi-cuadrado).
+
+function logGamma(x) {
+  const g = 7;
+  const p = [0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+    771.32342877765313, -176.61502916214059, 12.507343278686905,
+    -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  if (x < 0.5) {
+    return Math.log(Math.PI / Math.sin(Math.PI * x)) - logGamma(1 - x);
+  }
+  x -= 1;
+  let a = p[0];
+  const t = x + g + 0.5;
+  for (let i = 1; i < g + 2; i++) a += p[i] / (x + i);
+  return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+}
+
+function betacf(x, a, b) {
+  const MAXIT = 200, EPS = 3e-9, FPMIN = 1e-30;
+  let qab = a + b, qap = a + 1, qam = a - 1;
+  let c = 1, d = 1 - qab * x / qap;
+  if (Math.abs(d) < FPMIN) d = FPMIN;
+  d = 1 / d;
+  let h = d;
+  for (let m = 1; m <= MAXIT; m++) {
+    const m2 = 2 * m;
+    let aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+    d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+    d = 1 / d; h *= d * c;
+    aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+    d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+    d = 1 / d;
+    const del = d * c; h *= del;
+    if (Math.abs(del - 1) < EPS) break;
+  }
+  return h;
+}
+
+function betai(a, b, x) {
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  const bt = Math.exp(logGamma(a + b) - logGamma(a) - logGamma(b) + a * Math.log(x) + b * Math.log(1 - x));
+  if (x < (a + 1) / (a + b + 2)) return bt * betacf(x, a, b) / a;
+  return 1 - bt * betacf(1 - x, b, a) / b;
+}
+
+// P(T <= t) para t-Student con df grados de libertad
+function tcdf(t, df) {
+  const x = df / (df + t * t);
+  const p = betai(df / 2, 0.5, x);
+  return t > 0 ? 1 - p / 2 : p / 2;
+}
+
+// p-valor bilateral
+function tTestPvalue(t, df) {
+  return 2 * (1 - tcdf(Math.abs(t), df));
+}
+
+// valor crítico t (bisección) para IC 95% u otros
+function tinv(p, df) {
+  // p = probabilidad acumulada deseada (ej 0.975)
+  let lo = 0, hi = 100;
+  for (let i = 0; i < 100; i++) {
+    const mid = (lo + hi) / 2;
+    if (tcdf(mid, df) < p) lo = mid; else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+// Gamma incompleta regularizada P(a,x)
+function gammaP(a, x) {
+  if (x < 0 || a <= 0) return NaN;
+  if (x === 0) return 0;
+  if (x < a + 1) {
+    // serie
+    let ap = a, sum = 1 / a, del = sum;
+    for (let n = 1; n <= 200; n++) {
+      ap += 1; del *= x / ap; sum += del;
+      if (Math.abs(del) < Math.abs(sum) * 3e-9) break;
+    }
+    return sum * Math.exp(-x + a * Math.log(x) - logGamma(a));
+  } else {
+    // fracción continua -> Q(a,x), luego P=1-Q
+    let b = x + 1 - a, c = 1e300, d = 1 / b, h = d;
+    for (let i = 1; i <= 200; i++) {
+      const an = -i * (i - a);
+      b += 2;
+      d = an * d + b; if (Math.abs(d) < 1e-300) d = 1e-300;
+      c = b + an / c; if (Math.abs(c) < 1e-300) c = 1e-300;
+      d = 1 / d;
+      const del = d * c; h *= del;
+      if (Math.abs(del - 1) < 3e-9) break;
+    }
+    const Q = Math.exp(-x + a * Math.log(x) - logGamma(a)) * h;
+    return 1 - Q;
+  }
+}
+
+function chi2cdf(x, k) {
+  return gammaP(k / 2, x / 2);
+}
+
+// ============ Utilidades descriptivas ============
+function mean(a) { return a.reduce((s, v) => s + v, 0) / a.length; }
+function sd(a) { const m = mean(a); return Math.sqrt(a.reduce((s, v) => s + (v - m) ** 2, 0) / (a.length - 1)); }
+function median(a) {
+  const s = [...a].sort((x, y) => x - y); const n = s.length;
+  return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
+}
+function quantile(a, q) {
+  const s = [...a].sort((x, y) => x - y);
+  const pos = (s.length - 1) * q, base = Math.floor(pos), rest = pos - base;
+  return s[base + 1] !== undefined ? s[base] + rest * (s[base + 1] - s[base]) : s[base];
+}
+function rankArray(a) {
+  const idx = a.map((v, i) => i).sort((i, j) => a[i] - a[j]);
+  const ranks = new Array(a.length);
+  let i = 0;
+  while (i < idx.length) {
+    let j = i;
+    while (j + 1 < idx.length && a[idx[j + 1]] === a[idx[i]]) j++;
+    const avgRank = (i + j) / 2 + 1;
+    for (let k = i; k <= j; k++) ranks[idx[k]] = avgRank;
+    i = j + 1;
+  }
+  return ranks;
+}
+
+// ============ Correlación ============
+function pearson(x, y) {
+  const n = x.length, mx = mean(x), my = mean(y);
+  let sxy = 0, sxx = 0, syy = 0;
+  for (let i = 0; i < n; i++) { const dx = x[i] - mx, dy = y[i] - my; sxy += dx * dy; sxx += dx * dx; syy += dy * dy; }
+  const r = sxy / Math.sqrt(sxx * syy);
+  const df = n - 2;
+  const t = r * Math.sqrt(df / (1 - r * r));
+  const p = tTestPvalue(t, df);
+  const z = Math.atanh(r), se = 1 / Math.sqrt(n - 3);
+  const zc = 1.959963985;
+  const ci = [Math.tanh(z - zc * se), Math.tanh(z + zc * se)];
+  return { r, p, ci, n };
+}
+function spearman(x, y) {
+  return pearson(rankArray(x), rankArray(y));
+}
+
+// ============ Regresión lineal múltiple (OLS) ============
+// X: array de arrays (n x p, incluye columna de 1s), y: array (n)
+function matTranspose(M) { return M[0].map((_, j) => M.map(r => r[j])); }
+function matMul(A, B) {
+  const r = A.length, k = B.length, c = B[0].length;
+  const out = Array.from({ length: r }, () => new Array(c).fill(0));
+  for (let i = 0; i < r; i++) for (let j = 0; j < c; j++) { let s = 0; for (let l = 0; l < k; l++) s += A[i][l] * B[l][j]; out[i][j] = s; }
+  return out;
+}
+function matVecMul(A, v) { return A.map(row => row.reduce((s, a, i) => s + a * v[i], 0)); }
+function matInverse(M) {
+  const n = M.length;
+  const A = M.map((row, i) => [...row, ...Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))]);
+  for (let col = 0; col < n; col++) {
+    let pivot = col;
+    for (let r = col + 1; r < n; r++) if (Math.abs(A[r][col]) > Math.abs(A[pivot][col])) pivot = r;
+    if (Math.abs(A[pivot][col]) < 1e-10) return null; // singular
+    [A[col], A[pivot]] = [A[pivot], A[col]];
+    const pv = A[col][col];
+    for (let j = 0; j < 2 * n; j++) A[col][j] /= pv;
+    for (let r = 0; r < n; r++) {
+      if (r === col) continue;
+      const factor = A[r][col];
+      for (let j = 0; j < 2 * n; j++) A[r][j] -= factor * A[col][j];
+    }
+  }
+  return A.map(row => row.slice(n));
+}
+
+function olsFit(X, y, labels) {
+  const n = X.length, p = X[0].length;
+  if (n <= p) return { error: 'N insuficiente para el número de parámetros' };
+  const Xt = matTranspose(X);
+  const XtX = matMul(Xt, X);
+  const XtXinv = matInverse(XtX);
+  if (!XtXinv) return { error: 'Matriz singular (colinealidad perfecta o categoría sin variación tras los filtros)' };
+  const Xty = matVecMul(Xt, y);
+  const beta = matVecMul(XtXinv, Xty);
+  const yhat = matVecMul(X, beta);
+  const resid = y.map((v, i) => v - yhat[i]);
+  const rss = resid.reduce((s, r) => s + r * r, 0);
+  const ymean = mean(y);
+  const tss = y.reduce((s, v) => s + (v - ymean) ** 2, 0);
+  const r2 = 1 - rss / tss;
+  const dfRes = n - p;
+  const sigma2 = rss / dfRes;
+  const se = XtXinv.map((row, i) => Math.sqrt(sigma2 * row[i]));
+  const tcrit = tinv(0.975, dfRes);
+  const coefs = beta.map((b, i) => {
+    const t = b / se[i];
+    const pval = tTestPvalue(t, dfRes);
+    return { label: labels[i], beta: b, se: se[i], t, p: pval, ci: [b - tcrit * se[i], b + tcrit * se[i]] };
+  });
+  const adjR2 = 1 - (1 - r2) * (n - 1) / dfRes;
+  return { n, p, coefs, r2, adjR2, rss, sigma2, dfRes, resid, yhat, XtXinv, tcrit };
+}
+
+// Predicción con IC para una fila x (misma estructura de columnas que X del modelo)
+function predictWithCI(fit, xrow) {
+  const Minv = fit.XtXinv;
+  let v = 0;
+  for (let i = 0; i < xrow.length; i++) {
+    let s = 0;
+    for (let j = 0; j < xrow.length; j++) s += Minv[i][j] * xrow[j];
+    v += xrow[i] * s;
+  }
+  const se = Math.sqrt(fit.sigma2 * v);
+  const yhat = xrow.reduce((s, x, i) => s + x * fit.coefs[i].beta, 0);
+  return { yhat, se, ci: [yhat - fit.tcrit * se, yhat + fit.tcrit * se] };
+}
+
+// ============ Kruskal-Wallis ============
+function kruskalWallis(groups) {
+  const all = [].concat(...groups);
+  const n = all.length;
+  const ranks = rankArray(all);
+  let idx = 0;
+  const groupRanks = groups.map(g => { const r = ranks.slice(idx, idx + g.length); idx += g.length; return r; });
+  let H = 0;
+  for (const gr of groupRanks) {
+    const Rsum = gr.reduce((s, v) => s + v, 0);
+    H += (Rsum * Rsum) / gr.length;
+  }
+  H = (12 / (n * (n + 1))) * H - 3 * (n + 1);
+  const df = groups.length - 1;
+  const p = 1 - chi2cdf(H, df);
+  return { H, df, p };
+}
+
+if (typeof module !== 'undefined') module.exports = { pearson, spearman, olsFit, kruskalWallis, predictWithCI, mean, sd, median, quantile, tcdf, tinv, chi2cdf };
+
+</script>
+<script>
+// ================= Estado global =================
+const STATE = {
+  sexo: new Set(['Masculino','Femenino']),
+  region: new Set(['Centro','Norte','Sur','Sureste','Sin dato']),
+  imccat: new Set(['<25','25-29.9','>=30','Sin dato']),
+  edadMin: 3, edadMax: 64, edadNA: true,
+  imcMin: 14.2, imcMax: 43.3, imcNA: true,
+  pcrMin: 0.1, pcrMax: 14.35,
+};
+const DEFAULT_STATE = JSON.parse(JSON.stringify({
+  edadMin:3, edadMax:64, imcMin:14.2, imcMax:43.3, pcrMin:0.1, pcrMax:14.35
+}));
+
+function imcCat(x){
+  if(x==null) return 'Sin dato';
+  if(x<25) return '<25';
+  if(x<30) return '25-29.9';
+  return '>=30';
+}
+
+function fmt(x, d=2){ if(x==null||isNaN(x)) return '—'; return Number(x).toFixed(d); }
+function fmtP(p){
+  if(p==null||isNaN(p)) return '—';
+  if(p<0.001) return 'p<0.001';
+  return 'p='+p.toFixed(3);
+}
+function sigBadge(p){
+  if(p==null||isNaN(p)) return '<span class="badge nonsig">n/d</span>';
+  return p<0.05 ? `<span class="badge sig">${fmtP(p)}</span>` : `<span class="badge nonsig">${fmtP(p)}</span>`;
+}
+function pctFmt(x,d=1){ if(x==null||isNaN(x)) return '—'; return (x>0?'+':'')+x.toFixed(d)+'%'; }
+
+// ================= Filtrado =================
+function applyFilters(){
+  return DATA.filter(d=>{
+    if(!STATE.sexo.has(d.sexo)) return false;
+    const reg = d.region==null? 'Sin dato' : d.region;
+    if(!STATE.region.has(reg)) return false;
+    const cat = imcCat(d.imc);
+    if(!STATE.imccat.has(cat)) return false;
+    if(d.edad==null){ if(!STATE.edadNA) return false; }
+    else { if(d.edad<STATE.edadMin || d.edad>STATE.edadMax) return false; }
+    if(d.imc==null){ if(!STATE.imcNA) return false; }
+    else { if(d.imc<STATE.imcMin || d.imc>STATE.imcMax) return false; }
+    if(d.proteina_c_reactiva_mg_l==null){ /* no missing in this field */ }
+    else { if(d.proteina_c_reactiva_mg_l<STATE.pcrMin || d.proteina_c_reactiva_mg_l>STATE.pcrMax) return false; }
+    return true;
+  });
+}
+
+function completeCase(rows, fields){
+  return rows.filter(d=> fields.every(f=> d[f]!=null));
+}
+
+// ================= UI: filtros =================
+function buildChip(container, value, set, onchange){
+  const el = document.createElement('div');
+  el.className = 'chip' + (set.has(value)?' active':'');
+  el.textContent = value;
+  el.onclick = ()=>{
+    if(set.has(value)) set.delete(value); else set.add(value);
+    el.classList.toggle('active');
+    onchange();
+  };
+  container.appendChild(el);
+}
+
+function initFilters(){
+  const sexoBox = document.getElementById('f-sexo');
+  ['Masculino','Femenino'].forEach(v=>buildChip(sexoBox, v, STATE.sexo, onFilterChange));
+  const regionBox = document.getElementById('f-region');
+  ['Centro','Norte','Sur','Sureste','Sin dato'].forEach(v=>buildChip(regionBox, v, STATE.region, onFilterChange));
+  const catBox = document.getElementById('f-imccat');
+  ['<25','25-29.9','>=30','Sin dato'].forEach(v=>buildChip(catBox, v, STATE.imccat, onFilterChange));
+
+  document.getElementById('edadMin').value = STATE.edadMin;
+  document.getElementById('edadMax').value = STATE.edadMax;
+  document.getElementById('imcMin').value = STATE.imcMin;
+  document.getElementById('imcMax').value = STATE.imcMax;
+  document.getElementById('pcrMin').value = STATE.pcrMin;
+  document.getElementById('pcrMax').value = STATE.pcrMax;
+
+  ['edadMin','edadMax','imcMin','imcMax','pcrMin','pcrMax'].forEach(id=>{
+    document.getElementById(id).addEventListener('change', e=>{
+      STATE[id] = parseFloat(e.target.value);
+      onFilterChange();
+    });
+  });
+  document.getElementById('edadNA').addEventListener('change', e=>{STATE.edadNA=e.target.checked; onFilterChange();});
+  document.getElementById('imcNA').addEventListener('change', e=>{STATE.imcNA=e.target.checked; onFilterChange();});
+
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    // Importante: mutar los Set existentes en lugar de reasignarlos, para no romper
+    // las referencias capturadas por los closures de los chips (buildChip).
+    STATE.sexo.clear(); ['Masculino','Femenino'].forEach(v=>STATE.sexo.add(v));
+    STATE.region.clear(); ['Centro','Norte','Sur','Sureste','Sin dato'].forEach(v=>STATE.region.add(v));
+    STATE.imccat.clear(); ['<25','25-29.9','>=30','Sin dato'].forEach(v=>STATE.imccat.add(v));
+    STATE.edadNA = true; STATE.imcNA = true;
+    Object.assign(STATE, DEFAULT_STATE);
+    document.querySelectorAll('.chip').forEach(c=>c.classList.add('active'));
+    document.getElementById('edadNA').checked = true;
+    document.getElementById('imcNA').checked = true;
+    document.getElementById('edadMin').value = STATE.edadMin;
+    document.getElementById('edadMax').value = STATE.edadMax;
+    document.getElementById('imcMin').value = STATE.imcMin;
+    document.getElementById('imcMax').value = STATE.imcMax;
+    document.getElementById('pcrMin').value = STATE.pcrMin;
+    document.getElementById('pcrMax').value = STATE.pcrMax;
+    onFilterChange();
+  });
+}
+
+function onFilterChange(){
+  renderAll();
+}
+
+// ================= Tabs =================
+const TABS = [
+  {id:'validacion', label:'1 · Validación', static:true},
+  {id:'descriptivos', label:'2 · Descriptivos'},
+  {id:'scatter', label:'3 · IMC ↔ Ferritina'},
+  {id:'grupos', label:'4 · Grupos de IMC'},
+  {id:'regresion', label:'5–8 · Modelos'},
+  {id:'inflamacion', label:'8 · Vía de inflamación'},
+  {id:'efectos', label:'12 · Efectos ajustados'},
+  {id:'sensibilidad', label:'9 · Sensibilidad', static:true},
+  {id:'interpretacion', label:'13 · Interpretación'},
+  {id:'calidad', label:'14 · Calidad y límites'},
+];
+
+function initTabs(){
+  const nav = document.getElementById('tabsNav');
+  const content = document.getElementById('tabContent');
+  TABS.forEach((t,i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (i===0?' active':'');
+    btn.textContent = t.label;
+    btn.onclick = ()=>{
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.tabpanel').forEach(p=>p.classList.add('hidden'));
+      document.getElementById('panel-'+t.id).classList.remove('hidden');
+    };
+    nav.appendChild(btn);
+    const panel = document.createElement('div');
+    panel.className = 'tabpanel' + (i===0?'':' hidden');
+    panel.id = 'panel-'+t.id;
+    content.appendChild(panel);
+  });
+}
+
+// ================= Hero =================
+function renderHero(){
+  const box = document.getElementById('heroStats');
+  const base = DATA.filter(d=>d.imc!=null&&d.ferritina_serica_ng_ml!=null);
+  const pear = pearson(base.map(d=>d.imc), base.map(d=>d.ferritina_serica_ng_ml));
+  const adj = PRE.models.ajustado_completo;
+  box.innerHTML = `
+    <div class="ribbon-stat">
+      <div class="label">Correlación cruda (Pearson)</div>
+      <div class="val">r = ${fmt(pear.r,2)}</div>
+      <div class="sub">IC95% [${fmt(pear.ci[0],2)}, ${fmt(pear.ci[1],2)}] · N=${pear.n}</div>
+    </div>
+    <div class="ribbon-stat">
+      <div class="label">β(IMC) ajustado por PCR, edad, sexo, región</div>
+      <div class="val">${fmt(adj.beta,2)} ng/mL por kg/m²</div>
+      <div class="sub">IC95% [${fmt(adj.ci[0],2)}, ${fmt(adj.ci[1],2)}] · ${fmtP(adj.p)}</div>
+    </div>
+    <div class="ribbon-stat">
+      <div class="label">Atenuación del efecto tras ajuste</div>
+      <div class="val">${pctFmt(PRE.models.pct_cambio_crudo_a_completo,1)}</div>
+      <div class="sub">vs. modelo crudo (IMC solo)</div>
+    </div>
+    <div class="ribbon-stat">
+      <div class="label">Muestra</div>
+      <div class="val">N=220</div>
+      <div class="sub">analizable: ${adj.n} en modelo completo</div>
+    </div>`;
+}
+
+// ================= 1. Validación (estática) =================
+function renderValidation(){
+  const v = PRE.validation;
+  const panel = document.getElementById('panel-validacion');
+  const missRows = Object.keys(v.missing).filter(k=>k!=='id_participante').map(k=>{
+    const label = {edad:'Edad',sexo:'Sexo',region:'Región',imc:'IMC',dieta_hierro_mg_dia:'Ingesta de hierro',
+      ferritina_serica_ng_ml:'Ferritina sérica',proteina_c_reactiva_mg_l:'PCR'}[k]||k;
+    return `<tr><td>${label}</td><td class="num">${v.missing[k]}</td><td class="num">${v.missing_pct[k]}%</td></tr>`;
+  }).join('');
+  const rangoRows = Object.keys(v.rangos).map(k=>{
+    const label = {edad:'Edad (años)',imc:'IMC (kg/m²)',dieta_hierro_mg_dia:'Hierro dieta (mg/día)',
+      ferritina_serica_ng_ml:'Ferritina (ng/mL)',proteina_c_reactiva_mg_l:'PCR (mg/L)'}[k]||k;
+    return `<tr><td>${label}</td><td class="num">${fmt(v.rangos[k][0],1)}</td><td class="num">${fmt(v.rangos[k][1],1)}</td></tr>`;
+  }).join('');
+  panel.innerHTML = `
+  <div class="panel">
+    <h2>1 · Validación automática del dataset <span class="tag static">calculado sobre N=220 (muestra completa)</span></h2>
+    <p class="lead">Se ejecuta antes de cualquier gráfico o modelo. No se elimina ninguna observación de forma automática; los valores extremos plausibles se conservan.</p>
+    <div class="grid3">
+      <div>
+        <div class="subhead">Identificación y duplicados</div>
+        <div class="stat-line"><span class="k">Filas totales</span><span class="v">${v.n_filas}</span></div>
+        <div class="stat-line"><span class="k">IDs únicos</span><span class="v">${v.n_ids_unicos}</span></div>
+        <div class="stat-line"><span class="k">Filas duplicadas exactas</span><span class="v">${v.duplicados_exactos}</span></div>
+        <div class="stat-line"><span class="k">IDs duplicados</span><span class="v">${v.duplicados_id}</span></div>
+        <div class="callout">Sin duplicados. Cada fila corresponde a un participante único.</div>
+      </div>
+      <div>
+        <div class="subhead">Datos faltantes por variable</div>
+        <table><thead><tr><th>Variable</th><th class="num">N faltante</th><th class="num">%</th></tr></thead>
+        <tbody>${missRows}</tbody></table>
+      </div>
+      <div>
+        <div class="subhead">Rangos observados</div>
+        <table><thead><tr><th>Variable</th><th class="num">Mín</th><th class="num">Máx</th></tr></thead>
+        <tbody>${rangoRows}</tbody></table>
+      </div>
+    </div>
+    <div class="subhead">Categorías declaradas</div>
+    <div class="grid2">
+      <div class="stat-line"><span class="k">Sexo</span><span class="v">${Object.entries(v.sexo_categorias).map(([k,n])=>`${k}: ${n}`).join(' · ')}</span></div>
+      <div class="stat-line"><span class="k">Región</span><span class="v">${Object.entries(v.region_categorias).map(([k,n])=>`${k==='nan'?'Sin dato':k}: ${n}`).join(' · ')}</span></div>
+    </div>
+    <div class="subhead">Forma de las distribuciones (muestra completa)</div>
+    <table>
+      <thead><tr><th>Variable</th><th class="num">Asimetría (skew)</th><th class="num">Shapiro-Wilk p</th><th>Lectura</th></tr></thead>
+      <tbody>
+        <tr><td>IMC</td><td class="num">${v.skew.imc}</td><td class="num">${fmt(v.shapiro_p.imc,3)}</td><td>Compatible con normalidad</td></tr>
+        <tr><td>Ferritina sérica</td><td class="num">${v.skew.ferritina_serica_ng_ml}</td><td class="num">${fmt(v.shapiro_p.ferritina_serica_ng_ml,3)}</td><td>Compatible con normalidad (a pesar de que la literatura suele asumir asimetría)</td></tr>
+        <tr><td>PCR</td><td class="num">${v.skew.proteina_c_reactiva_mg_l}</td><td class="num">${v.shapiro_p.proteina_c_reactiva_mg_l.toExponential(1)}</td><td>Marcadamente asimétrica a la derecha (esperable biológicamente)</td></tr>
+      </tbody>
+    </table>
+    <div class="callout warn">
+      <b>Hallazgo relevante:</b> a diferencia de lo que suele asumirse por defecto, en esta muestra la <b>ferritina no está fuertemente sesgada</b> (asimetría ≈ 0.17, Shapiro p=${fmt(v.shapiro_p.ferritina_serica_ng_ml,2)}). Esto se verifica formalmente antes de decidir si transformar logarítmicamente (ver pestaña "Modelos").
+    </div>
+    <div class="callout">
+      <b>Posible inconsistencia documentada, no excluida:</b> ${v.menores_18} participantes tienen edad &lt; 18 años (3 años). El IMC en kg/m² para menores no es directamente comparable al de adultos (no usa percentiles por edad), pero se conserva el dato; su efecto sobre los resultados se evalúa explícitamente en el análisis de sensibilidad (pestaña 9).
+    </div>
+    <div class="callout">
+      Los códigos de error o ausencia identificados en la auditoría de limpieza previa ya están representados como valores nulos (NA) en este archivo; no se realiza ninguna imputación ni sustitución silenciosa.
+    </div>
+  </div>`;
+}
+
+// ================= 2. Descriptivos =================
+function contStats(arr){
+  const a = arr.filter(v=>v!=null);
+  if(a.length===0) return null;
+  return {
+    n:a.length, mean:mean(a), sd: a.length>1?sd(a):0,
+    median: median(a), q1: quantile(a,0.25), q3: quantile(a,0.75),
+    min: Math.min(...a), max: Math.max(...a)
+  };
+}
+
+function renderDescriptives(filtered){
+  const panel = document.getElementById('panel-descriptivos');
+  const nTotal = filtered.length;
+  const contVars = [
+    ['edad','Edad (años)'], ['imc','IMC (kg/m²)'], ['ferritina_serica_ng_ml','Ferritina (ng/mL)'],
+    ['proteina_c_reactiva_mg_l','PCR (mg/L)'], ['dieta_hierro_mg_dia','Hierro en dieta (mg/día)']
+  ];
+  const rows = contVars.map(([k,label])=>{
+    const s = contStats(filtered.map(d=>d[k]));
+    if(!s) return `<tr><td>${label}</td><td colspan="6" class="num">sin datos con estos filtros</td></tr>`;
+    const missPct = (100*(1-s.n/nTotal)).toFixed(1);
+    return `<tr><td>${label}</td><td class="num">${s.n}</td><td class="num">${missPct}%</td>
+      <td class="num">${fmt(s.mean,1)} ± ${fmt(s.sd,1)}</td>
+      <td class="num">${fmt(s.median,1)} [${fmt(s.q1,1)}–${fmt(s.q3,1)}]</td>
+      <td class="num">${fmt(s.min,1)} – ${fmt(s.max,1)}</td></tr>`;
+  }).join('');
+
+  const sexoCounts = {};
+  filtered.forEach(d=>{sexoCounts[d.sexo]=(sexoCounts[d.sexo]||0)+1;});
+  const regionCounts = {};
+  filtered.forEach(d=>{const r=d.region==null?'Sin dato':d.region; regionCounts[r]=(regionCounts[r]||0)+1;});
+  const catCounts = {};
+  filtered.forEach(d=>{const c=imcCat(d.imc); catCounts[c]=(catCounts[c]||0)+1;});
+
+  const catRow = (obj)=>Object.entries(obj).sort((a,b)=>b[1]-a[1]).map(([k,n])=>
+    `<tr><td>${k}</td><td class="num">${n}</td><td class="num">${(100*n/nTotal).toFixed(1)}%</td></tr>`).join('');
+
+  panel.innerHTML = `
+  <div class="panel">
+    <h2>2 · Análisis descriptivo <span class="tag">dinámico según filtros</span></h2>
+    <p class="lead">N total tras filtros: <b>${nTotal}</b> de 220. Debido a la posible asimetría de ferritina y PCR se muestran mediana y RIC junto con media ± DE.</p>
+    <div class="subhead">Variables continuas</div>
+    <table><thead><tr><th>Variable</th><th class="num">N</th><th class="num">% faltante</th>
+      <th class="num">Media ± DE</th><th class="num">Mediana [RIC]</th><th class="num">Rango</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+    <div class="grid3" style="margin-top:18px;">
+      <div>
+        <div class="subhead">Sexo</div>
+        <table><tbody>${catRow(sexoCounts)}</tbody></table>
+      </div>
+      <div>
+        <div class="subhead">Región</div>
+        <table><tbody>${catRow(regionCounts)}</tbody></table>
+      </div>
+      <div>
+        <div class="subhead">Categoría de IMC (descriptivo)</div>
+        <table><tbody>${catRow(catCounts)}</tbody></table>
+      </div>
+    </div>
+    <div class="subhead">Distribuciones</div>
+    <div class="grid2">
+      <div id="hist_imc" class="plotdiv" style="height:260px;"></div>
+      <div id="hist_fer" class="plotdiv" style="height:260px;"></div>
+      <div id="hist_pcr" class="plotdiv" style="height:260px;"></div>
+      <div id="hist_fe" class="plotdiv" style="height:260px;"></div>
+    </div>
+  </div>`;
+
+  const histCfg = {displayModeBar:false, responsive:true};
+  const baseLayout = (title,color)=>({
+    title:{text:title,font:{size:12,family:'IBM Plex Sans'}}, margin:{l:40,r:15,t:34,b:34},
+    font:{family:'IBM Plex Sans',size:11}, bargap:0.05,
+    paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)'
+  });
+  Plotly.newPlot('hist_imc',[{x:filtered.map(d=>d.imc).filter(v=>v!=null),type:'histogram',marker:{color:'#1F6E75'}}],
+    baseLayout('IMC (kg/m²)'), histCfg);
+  Plotly.newPlot('hist_fer',[{x:filtered.map(d=>d.ferritina_serica_ng_ml).filter(v=>v!=null),type:'histogram',marker:{color:'#B9812E'}}],
+    baseLayout('Ferritina sérica (ng/mL)'), histCfg);
+  Plotly.newPlot('hist_pcr',[{x:filtered.map(d=>d.proteina_c_reactiva_mg_l).filter(v=>v!=null),type:'histogram',marker:{color:'#A63A31'}}],
+    baseLayout('PCR (mg/L)'), histCfg);
+  Plotly.newPlot('hist_fe',[{x:filtered.map(d=>d.dieta_hierro_mg_dia).filter(v=>v!=null),type:'histogram',marker:{color:'#3E7A56'}}],
+    baseLayout('Hierro en dieta (mg/día)'), histCfg);
+}
+
+// ================= 3. Scatter IMC-Ferritina =================
+let LOG_Y = false;
+function renderScatter(filtered){
+  const panel = document.getElementById('panel-scatter');
+  const cc = completeCase(filtered, ['imc','ferritina_serica_ng_ml']);
+  const nWarn = cc.length<30 ? `<div class="warn-inline">⚠ N=${cc.length}: muestra pequeña, interpretar la tendencia con cautela</div>` : '';
+
+  panel.innerHTML = `
+  <div class="panel">
+    <h2>5 · IMC vs. ferritina sérica <span class="tag">dinámico · N=${cc.length}</span></h2>
+    <p class="lead">Cada punto es un participante. La línea muestra la tendencia lineal (regresión simple) con banda de IC95% para la media condicional. El IMC se mantiene continuo; no se categoriza para este análisis principal.</p>
+    <label class="f-check" style="margin-bottom:10px;"><input type="checkbox" id="logYToggle" ${LOG_Y?'checked':''}> transformación logarítmica de ferritina (eje Y)</label>
+    ${nWarn}
+    <div id="scatterMain" class="plotdiv" style="height:440px;"></div>
+    <div class="grid3" style="margin-top:14px;">
+      <div class="stat-line"><span class="k">Pearson r</span><span class="v" id="scatterPearson"></span></div>
+      <div class="stat-line"><span class="k">Spearman ρ (robusta)</span><span class="v" id="scatterSpearman"></span></div>
+      <div class="stat-line"><span class="k">N utilizado</span><span class="v">${cc.length}</span></div>
+    </div>
+    <div class="callout">
+      No se elige Pearson o Spearman únicamente por una prueba automática de normalidad: dado que la ferritina en esta muestra no está fuertemente sesgada (ver Validación), Pearson es interpretable; Spearman se reporta como verificación robusta ante posible no linealidad o valores influyentes, y ambos coinciden en dirección y magnitud aproximada.
+    </div>
+  </div>`;
+
+  document.getElementById('logYToggle').addEventListener('change', e=>{
+    LOG_Y = e.target.checked;
+    renderScatter(applyFilters());
+  });
+
+  if(cc.length < 4){
+    document.getElementById('scatterMain').innerHTML = '<p style="color:var(--muted);font-size:13px;padding:20px 0;">N insuficiente (mínimo 4 observaciones) para calcular la tendencia y las correlaciones con los filtros actuales.</p>';
+    const pe=document.getElementById('scatterPearson'), se=document.getElementById('scatterSpearman');
+    if(pe) pe.textContent='—'; if(se) se.textContent='—';
+    return;
+  }
+  drawScatterPlot(cc);
+}
+
+function drawScatterPlot(cc){
+  const x = cc.map(d=>d.imc);
+  const yRaw = cc.map(d=>d.ferritina_serica_ng_ml);
+  const y = LOG_Y ? yRaw.map(v=>Math.log(v)) : yRaw;
+
+  const pear = pearson(x, yRaw);
+  const spear = spearman(x, yRaw);
+  const pearElem = document.getElementById('scatterPearson');
+  const spearElem = document.getElementById('scatterSpearman');
+  if(pearElem) pearElem.innerHTML = `${fmt(pear.r,3)} [${fmt(pear.ci[0],2)}, ${fmt(pear.ci[1],2)}] ${sigBadge(pear.p)}`;
+  if(spearElem) spearElem.innerHTML = `${fmt(spear.r,3)} [${fmt(spear.ci[0],2)}, ${fmt(spear.ci[1],2)}] ${sigBadge(spear.p)}`;
+
+  const X = x.map(v=>[1,v]);
+  const fit = olsFit(X, y, ['Intercept','imc']);
+
+  const xg = [];
+  const xmin = Math.min(...x), xmax = Math.max(...x);
+  for(let i=0;i<=40;i++) xg.push(xmin + (xmax-xmin)*i/40);
+  const predY = [], loY = [], hiY = [];
+  xg.forEach(x0=>{
+    const pr = predictWithCI(fit, [1,x0]);
+    predY.push(pr.yhat); loY.push(pr.ci[0]); hiY.push(pr.ci[1]);
+  });
+
+  const tooltip = cc.map(d=>
+    `ID: ${d.id_participante}<br>Edad: ${d.edad??'s/d'} · Sexo: ${d.sexo}<br>Región: ${d.region??'s/d'}<br>`+
+    `IMC: ${d.imc} kg/m²<br>Ferritina: ${d.ferritina_serica_ng_ml} ng/mL<br>PCR: ${d.proteina_c_reactiva_mg_l} mg/L<br>Hierro dieta: ${d.dieta_hierro_mg_dia??'s/d'} mg/día`
+  );
+
+  const traces = [
+    {x:xg.concat([...xg].reverse()), y:hiY.concat([...loY].reverse()), fill:'toself',
+      fillcolor:'rgba(31,110,117,0.13)', line:{color:'transparent'}, hoverinfo:'skip', showlegend:true, name:'IC95% de la tendencia'},
+    {x:xg, y:predY, mode:'lines', line:{color:'#134048', width:2.5}, name:'Tendencia lineal'},
+    {x:x, y:y, mode:'markers', type:'scatter', name:'Participantes',
+      marker:{color:'#B9812E', size:7, opacity:0.75, line:{width:0.5,color:'#7a5620'}},
+      text:tooltip, hoverinfo:'text'}
+  ];
+  Plotly.newPlot('scatterMain', traces, {
+    margin:{l:55,r:20,t:10,b:46},
+    xaxis:{title:'IMC (kg/m²)', zeroline:false, gridcolor:'#EAEAE4'},
+    yaxis:{title: LOG_Y?'log(Ferritina sérica, ng/mL)':'Ferritina sérica (ng/mL)', zeroline:false, gridcolor:'#EAEAE4'},
+    font:{family:'IBM Plex Sans', size:12}, paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+    legend:{orientation:'h', y:-0.18}
+  }, {displayModeBar:false, responsive:true});
+}
+
+// ================= 4. Comparación por grupos de IMC =================
+function renderGroups(filtered){
+  const panel = document.getElementById('panel-grupos');
+  const cc = completeCase(filtered, ['imc','ferritina_serica_ng_ml']);
+  const cats = ['<25','25-29.9','>=30'];
+  const groupsObj = {}; cats.forEach(c=>groupsObj[c]=[]);
+  cc.forEach(d=>{ const c=imcCat(d.imc); if(groupsObj[c]) groupsObj[c].push(d.ferritina_serica_ng_ml); });
+
+  const smallN = cats.filter(c=>groupsObj[c].length<10);
+  const validGroups = cats.filter(c=>groupsObj[c].length>=2);
+  let kwHtml = '<span class="badge nonsig">No calculable (grupos insuficientes)</span>';
+  if(validGroups.length>=2){
+    const kw = kruskalWallis(validGroups.map(c=>groupsObj[c]));
+    kwHtml = `H=${fmt(kw.H,2)}, gl=${kw.df}, ${sigBadge(kw.p)}`;
+  }
+
+  const rows = cats.map(c=>{
+    const g = groupsObj[c];
+    if(g.length===0) return `<tr><td>${c} kg/m²</td><td class="num">0</td><td colspan="3" class="num">sin datos</td></tr>`;
+    return `<tr><td>${c} kg/m²</td><td class="num">${g.length}</td>
+      <td class="num">${fmt(median(g),1)}</td>
+      <td class="num">[${fmt(quantile(g,0.25),1)} – ${fmt(quantile(g,0.75),1)}]</td>
+      <td class="num">${fmt(mean(g),1)} ± ${g.length>1?fmt(sd(g),1):'—'}</td></tr>`;
+  }).join('');
+
+  panel.innerHTML = `
+  <div class="panel">
+    <h2>4 · Comparación de ferritina por categoría de IMC <span class="tag">dinámico · N=${cc.length}</span></h2>
+    <p class="lead">Las categorías (&lt;25, 25–29.9, ≥30 kg/m²) se usan <b>solo con fines descriptivos e interpretativos</b>; el análisis principal (regresión) mantiene el IMC continuo.</p>
+    ${smallN.length? `<div class="warn-inline">⚠ Grupo(s) con N&lt;10: ${smallN.join(', ')} — la comparación en ese grupo es poco estable</div>`:''}
+    <div class="grid2">
+      <div id="boxGroups" class="plotdiv" style="height:340px;"></div>
+      <div>
+        <table><thead><tr><th>Categoría IMC</th><th class="num">N</th><th class="num">Mediana</th><th class="num">RIC</th><th class="num">Media ± DE</th></tr></thead>
+        <tbody>${rows}</tbody></table>
+        <div class="subhead">Prueba de diferencia entre grupos</div>
+        <div class="stat-line"><span class="k">Kruskal-Wallis (rango, robusta)</span><span class="v">${kwHtml}</span></div>
+        <div class="callout">
+          Se prioriza Kruskal-Wallis en lugar de ANOVA clásica: aunque la ferritina es razonablemente normal dentro de cada grupo, la prueba de homogeneidad de varianzas (Levene, muestra completa) sugiere varianzas desiguales entre grupos (p=${fmt(PRE.group_comparison.levene_p,3)}). Un ANOVA de Welch (que no asume varianzas iguales) sobre la muestra completa da un resultado consistente: F=${fmt(PRE.group_comparison.welch_anova_F,1)}, p${PRE.group_comparison.welch_anova_p<0.001?'<0.001':'='+fmt(PRE.group_comparison.welch_anova_p,3)}.
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  const traces = cats.filter(c=>groupsObj[c].length>0).map(c=>({
+    y:groupsObj[c], type:'box', name:c, boxpoints:'all', jitter:0.4, pointpos:0,
+    marker:{color:'#1F6E75', size:4, opacity:0.5}, line:{color:'#134048'}
+  }));
+  Plotly.newPlot('boxGroups', traces, {
+    margin:{l:50,r:15,t:10,b:40}, yaxis:{title:'Ferritina sérica (ng/mL)', gridcolor:'#EAEAE4'},
+    font:{family:'IBM Plex Sans', size:12}, paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)', showlegend:false
+  }, {displayModeBar:false, responsive:true});
+}
+
+// ================= Ajuste de modelos (compartido) =================
+function fitAllModels(filtered){
+  const out = {};
+  // Muestra analítica común: caso completo para TODAS las variables del modelo ajustado.
+  // Crudo y +PCR se ajustan sobre esta MISMA muestra para que la comparación de coeficientes
+  // (atenuación por confusión) no esté contaminada por cambios en la composición muestral.
+  const ccFull = completeCase(filtered, ['imc','ferritina_serica_ng_ml','proteina_c_reactiva_mg_l','edad','sexo','region']);
+  out.ccFull = ccFull;
+
+  if(ccFull.length>3){
+    out.crudo = olsFit(ccFull.map(d=>[1,d.imc]), ccFull.map(d=>d.ferritina_serica_ng_ml), ['Intercept','imc']);
+  }
+  if(ccFull.length>4){
+    out.masPcr = olsFit(ccFull.map(d=>[1,d.imc,d.proteina_c_reactiva_mg_l]), ccFull.map(d=>d.ferritina_serica_ng_ml), ['Intercept','imc','pcr']);
+  }
+  // Crudo con la muestra máxima disponible (solo requiere IMC y ferritina) — se reporta aparte,
+  // ver también pestaña de Sensibilidad, para no confundir "efecto de ajustar" con "efecto de cambiar N".
+  const ccCrudeMax = completeCase(filtered, ['imc','ferritina_serica_ng_ml']);
+  if(ccCrudeMax.length>3){
+    out.crudoMax = olsFit(ccCrudeMax.map(d=>[1,d.imc]), ccCrudeMax.map(d=>d.ferritina_serica_ng_ml), ['Intercept','imc']);
+  }
+  if(ccFull.length>10){
+    const sexos = [...new Set(ccFull.map(d=>d.sexo))].sort();
+    const regiones = [...new Set(ccFull.map(d=>d.region))].sort();
+    const refSexo = sexos[0], otherSexos = sexos.filter(s=>s!==refSexo);
+    const refRegion = regiones[0], otherRegions = regiones.filter(r=>r!==refRegion);
+    out.refSexo = refSexo; out.refRegion = refRegion; out.otherSexos = otherSexos; out.otherRegions = otherRegions;
+    const buildRow = d => [1, d.imc, d.proteina_c_reactiva_mg_l, d.edad,
+      ...otherSexos.map(s=>d.sexo===s?1:0), ...otherRegions.map(r=>d.region===r?1:0)];
+    const labels = ['Intercept','imc','pcr','edad', ...otherSexos.map(s=>'sexo:'+s), ...otherRegions.map(r=>'region:'+r)];
+    const X = ccFull.map(buildRow);
+    const y = ccFull.map(d=>d.ferritina_serica_ng_ml);
+    out.adjustado = olsFit(X, y, labels);
+    out.adjustadoX = X; out.buildRow = buildRow;
+    // log
+    const ylog = ccFull.map(d=>Math.log(d.ferritina_serica_ng_ml));
+    out.adjustadoLog = olsFit(X, ylog, labels);
+  }
+  return out;
+}
+
+// ================= 5-8. Modelos de regresión =================
+function renderRegression(filtered){
+  const panel = document.getElementById('panel-regresion');
+  const m = fitAllModels(filtered);
+  const na = '<span class="badge nonsig">No estimable con N/filtros actuales</span>';
+
+  function rowFor(label, fit, key){
+    if(!fit || fit.error) return `<tr><td>${label}</td><td class="num" colspan="5">${na}</td></tr>`;
+    const c = fit.coefs.find(c=>c.label===key);
+    const interp = c.p<0.05 ? (c.beta<0?'Asociación inversa estadísticamente significativa':'Asociación directa estadísticamente significativa') : 'No significativa al 5%';
+    return `<tr><td>${label}</td><td>IMC</td><td class="num">${fmt(c.beta,3)}</td>
+      <td class="num">[${fmt(c.ci[0],3)}, ${fmt(c.ci[1],3)}]</td><td class="num">${sigBadge(c.p)}</td>
+      <td class="num">${fit.n}</td><td>${interp}</td></tr>`;
+  }
+
+  let pctChange1 = '—', pctChange2 = '—';
+  if(m.crudo && m.masPcr && !m.crudo.error && !m.masPcr.error){
+    const b0 = m.crudo.coefs.find(c=>c.label==='imc').beta;
+    const b1 = m.masPcr.coefs.find(c=>c.label==='imc').beta;
+    pctChange1 = pctFmt(100*(b1-b0)/b0,1);
+  }
+  if(m.crudo && m.adjustado && !m.crudo.error && !m.adjustado.error){
+    const b0 = m.crudo.coefs.find(c=>c.label==='imc').beta;
+    const b2 = m.adjustado.coefs.find(c=>c.label==='imc').beta;
+    pctChange2 = pctFmt(100*(b2-b0)/b0,1);
+  }
+
+  let logRow = na;
+  if(m.adjustadoLog && !m.adjustadoLog.error){
+    const c = m.adjustadoLog.coefs.find(c=>c.label==='imc');
+    const pctPerUnit = (Math.exp(c.beta)-1)*100;
+    logRow = `β=${fmt(c.beta,4)} en escala log [${fmt(c.ci[0],4)}, ${fmt(c.ci[1],4)}] ${sigBadge(c.p)} · N=${m.adjustadoLog.n}
+      <br><span class="k" style="color:var(--muted);font-size:12px;">≈ cambio relativo de ${pctFmt(pctPerUnit,2)} en ferritina por cada kg/m² adicional de IMC (no es un cambio absoluto en ng/mL)</span>`;
+  }
+
+  const diagOk = m.adjustado && !m.adjustado.error;
+
+  panel.innerHTML = `
+  <div class="panel">
+    <h2>5–7 · Modelos de regresión: ferritina ~ IMC <span class="tag">dinámico</span></h2>
+    <p class="lead">Modelo base: <span class="mono">ferritina ~ IMC</span>. Modelo ajustado: <span class="mono">ferritina ~ IMC + PCR + edad + sexo + región</span>. Todos los coeficientes se recalculan sobre el subconjunto filtrado (caso completo por modelo).</p>
+    <table>
+      <thead><tr><th>Modelo</th><th>Predictor</th><th class="num">β</th><th class="num">IC95%</th><th class="num">p</th><th class="num">N</th><th>Interpretación</th></tr></thead>
+      <tbody>
+        ${rowFor('Crudo (solo IMC)', m.crudo, 'imc')}
+        ${rowFor('+ PCR', m.masPcr, 'imc')}
+        ${rowFor('+ edad + sexo + región (ajustado completo)', m.adjustado, 'imc')}
+      </tbody>
+    </table>
+    <p style="font-size:12px;color:var(--muted);">Los tres modelos anteriores se ajustan sobre la <b>misma muestra</b> (caso completo para todas las covariables del modelo ajustado), para que la comparación de coeficientes refleje el efecto de añadir variables y no un cambio en la composición de la muestra. Como referencia adicional (muestra máxima posible, solo requiere IMC y ferritina): β crudo = ${m.crudoMax&&!m.crudoMax.error?fmt(m.crudoMax.coefs.find(c=>c.label==='imc').beta,3):'—'}, N=${m.crudoMax&&!m.crudoMax.error?m.crudoMax.n:'—'} (ver también pestaña Sensibilidad).</p>
+    <div id="coefCompare" class="plotdiv" style="height:220px;margin-top:14px;"></div>
+
+    <div class="subhead">8 · Papel de la inflamación (PCR) en la asociación</div>
+    <div class="grid3">
+      <div class="stat-line"><span class="k">β(IMC) crudo → +PCR</span><span class="v">${pctChange1}</span></div>
+      <div class="stat-line"><span class="k">β(IMC) crudo → ajustado completo</span><span class="v">${pctChange2}</span></div>
+      <div class="stat-line"><span class="k">R² crudo → ajustado</span><span class="v">${m.crudo&&!m.crudo.error?fmt(m.crudo.r2,3):'—'} → ${m.adjustado&&!m.adjustado.error?fmt(m.adjustado.r2,3):'—'}</span></div>
+    </div>
+    <div class="callout">
+      Un cambio relevante en el coeficiente de IMC al incorporar PCR es compatible con que la <b>inflamación sistémica explique parcialmente (confunda o medie estadísticamente)</b> la relación cruda entre IMC y ferritina — la ferritina es un reactante de fase aguda y puede elevarse por inflamación independientemente del estado de hierro. Esto <b>no establece</b> un mecanismo causal específico con estos datos transversales.
+    </div>
+
+    <div class="subhead">Especificación: ¿lineal o log(ferritina)?</div>
+    <div class="grid2">
+      <div>
+        <div class="stat-line"><span class="k">Modelo ajustado, log(ferritina) ~ IMC + …</span></div>
+        <p style="font-size:13px;">${logRow}</p>
+      </div>
+      <div>
+        <div class="callout">
+          <b>Decisión metodológica:</b> en la muestra analítica completa, los residuos del modelo <u>lineal</u> son aproximadamente normales (Shapiro-Wilk p=${fmt(PRE.diagnostics.shapiro_resid_adj_p,2)}) y homocedásticos (Breusch-Pagan p=${fmt(PRE.diagnostics.breusch_pagan_p,2)}), mientras que los residuos del modelo <u>log-transformado</u> muestran fuerte asimetría y curtosis (Shapiro-Wilk p≈${PRE.diagnostics.shapiro_log_resid_p.toExponential(1)}) — la transformación log <i>empeora</i> el ajuste en este caso. Por eso se prioriza la especificación lineal (sin transformar) como modelo principal; no se transforma "para forzar normalidad".
+        </div>
+      </div>
+    </div>
+
+    <div class="subhead">Diagnósticos del modelo ajustado (muestra analítica completa, referencia fija)</div>
+    <div class="grid3">
+      <div class="stat-line"><span class="k">Linealidad (término IMC² )</span><span class="v">${fmtP(PRE.diagnostics.quadratic_imc_p)}</span></div>
+      <div class="stat-line"><span class="k">Homocedasticidad (Breusch-Pagan)</span><span class="v">${fmtP(PRE.diagnostics.breusch_pagan_p)}</span></div>
+      <div class="stat-line"><span class="k">Normalidad de residuos (Shapiro)</span><span class="v">${fmtP(PRE.diagnostics.shapiro_resid_adj_p)}</span></div>
+      <div class="stat-line"><span class="k">Multicolinealidad (VIF máx.)</span><span class="v">${fmt(Math.max(...Object.values(PRE.diagnostics.vif)),2)}</span></div>
+      <div class="stat-line"><span class="k">Obs. influyentes (Cook's D&gt;4/n)</span><span class="v">${PRE.diagnostics.cooks_d_n_influential} de 156 (máx D=${fmt(PRE.diagnostics.cooks_d_max,3)})</span></div>
+      <div class="stat-line"><span class="k">AIC lineal vs. log</span><span class="v">${fmt(PRE.diagnostics.aic_linear,0)} vs ${fmt(PRE.diagnostics.aic_log,0)} (no comparables directamente, distinta escala de Y)</span></div>
+    </div>
+    <p style="font-size:12px;color:var(--muted);">Estos diagnósticos formales (Shapiro, Breusch-Pagan, VIF, Cook's D) se calculan una vez sobre la muestra analítica completa (N=156) como referencia metodológica y no se recalculan con cada combinación de filtros; el gráfico de residuos de abajo sí usa el subconjunto filtrado actual.</p>
+    <div id="residPlot" class="plotdiv" style="height:280px;"></div>
+  </div>`;
+
+  // Coefficient comparison plot
+  const models = [
+    {name:'Crudo', fit:m.crudo}, {name:'+ PCR', fit:m.masPcr}, {name:'+ edad/sexo/región', fit:m.adjustado}
+  ].filter(x=>x.fit && !x.fit.error);
+  if(models.length){
+    const names = models.map(x=>x.name);
+    const betas = models.map(x=>x.fit.coefs.find(c=>c.label==='imc').beta);
+    const errLo = models.map((x,i)=>betas[i]-x.fit.coefs.find(c=>c.label==='imc').ci[0]);
+    const errHi = models.map((x,i)=>x.fit.coefs.find(c=>c.label==='imc').ci[1]-betas[i]);
+    Plotly.newPlot('coefCompare', [{
+      x:betas, y:names, type:'scatter', mode:'markers', orientation:'h',
+      error_x:{type:'data', symmetric:false, array:errHi, arrayminus:errLo, color:'#134048'},
+      marker:{size:11, color:'#1F6E75'}
+    }, {x:[0,0], y:[names[0], names[names.length-1]], mode:'lines', line:{color:'#A63A31', dash:'dot', width:1}, hoverinfo:'skip', showlegend:false}
+    ], {
+      margin:{l:150,r:20,t:10,b:36}, xaxis:{title:'β (IMC) sobre ferritina, ng/mL por kg/m² [IC95%]', zeroline:false, gridcolor:'#EAEAE4'},
+      font:{family:'IBM Plex Sans', size:12}, paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)', showlegend:false
+    }, {displayModeBar:false, responsive:true});
+  } else {
+    document.getElementById('coefCompare').innerHTML = '<p style="color:var(--muted);font-size:13px;">No hay suficientes modelos estimables para comparar con los filtros actuales.</p>';
+  }
+
+  // Residuals vs fitted (adjusted model, filtered)
+  if(diagOk){
+    Plotly.newPlot('residPlot', [{
+      x:m.adjustado.yhat, y:m.adjustado.resid, mode:'markers', type:'scatter',
+      marker:{color:'#B9812E', size:6, opacity:0.7}
+    }, {x:[Math.min(...m.adjustado.yhat), Math.max(...m.adjustado.yhat)], y:[0,0], mode:'lines', line:{color:'#A63A31',dash:'dot'}, hoverinfo:'skip'}
+    ], {
+      margin:{l:55,r:15,t:20,b:40}, title:{text:'Residuos vs. valores ajustados (modelo ajustado, subconjunto filtrado, N='+m.adjustado.n+')',font:{size:12}},
+      xaxis:{title:'Ferritina ajustada (ng/mL)', gridcolor:'#EAEAE4'}, yaxis:{title:'Residuo', gridcolor:'#EAEAE4'},
+      font:{family:'IBM Plex Sans', size:11}, paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)', showlegend:false
+    }, {displayModeBar:false, responsive:true});
+  } else {
+    document.getElementById('residPlot').innerHTML = '<p style="color:var(--muted);font-size:13px;">Modelo ajustado no estimable con los filtros actuales (N insuficiente o colinealidad, p.ej. una sola categoría de región/sexo presente).</p>';
+  }
+}
+
+// ================= 8b. Vía de inflamación (IMC->PCR->Ferritina) =================
+function renderInflammation(filtered){
+  const panel = document.getElementById('panel-inflamacion');
+  const cc1 = completeCase(filtered, ['imc','proteina_c_reactiva_mg_l']);
+  const cc2 = completeCase(filtered, ['proteina_c_reactiva_mg_l','ferritina_serica_ng_ml']);
+  panel.innerHTML = `
+  <div class="panel">
+    <h2>8 · Contextualizando la vía adiposidad → inflamación → ferritina <span class="tag">dinámico</span></h2>
+    <p class="lead">Estas dos relaciones ayudan a interpretar por qué ajustar por PCR atenúa la asociación IMC–ferritina. No constituyen una prueba formal de mediación ni establecen dirección causal con datos transversales.</p>
+    <div class="grid2">
+      <div>
+        <div class="subhead">IMC → PCR (N=${cc1.length})</div>
+        <div id="plotImcPcr" class="plotdiv" style="height:320px;"></div>
+        <div class="stat-line"><span class="k">Pearson</span><span class="v" id="corrImcPcr"></span></div>
+      </div>
+      <div>
+        <div class="subhead">PCR → Ferritina (N=${cc2.length})</div>
+        <div id="plotPcrFer" class="plotdiv" style="height:320px;"></div>
+        <div class="stat-line"><span class="k">Pearson</span><span class="v" id="corrPcrFer"></span></div>
+      </div>
+    </div>
+    <div class="callout">
+      Patrón observado: a mayor IMC, mayor PCR (inflamación de bajo grado asociada a adiposidad); a mayor PCR, menor ferritina medida... o más precisamente, la PCR eleva la ferritina como reactante de fase aguda, lo cual puede <i>enmascarar</i> una deficiencia de hierro subyacente. La lectura de "ferritina más baja con más PCR" en esta muestra sugiere que, controlando esa vía inflamatoria, la relación directa IMC–ferritina se atenúa.
+    </div>
+  </div>`;
+  drawSimpleScatter('plotImcPcr', cc1.map(d=>d.imc), cc1.map(d=>d.proteina_c_reactiva_mg_l), 'IMC (kg/m²)', 'PCR (mg/L)', '#1F6E75', 'corrImcPcr');
+  drawSimpleScatter('plotPcrFer', cc2.map(d=>d.proteina_c_reactiva_mg_l), cc2.map(d=>d.ferritina_serica_ng_ml), 'PCR (mg/L)', 'Ferritina sérica (ng/mL)', '#A63A31', 'corrPcrFer');
+}
+
+function drawSimpleScatter(divId, x, y, xlab, ylab, color, corrElemId){
+  if(x.length<3){ document.getElementById(divId).innerHTML='<p style="color:var(--muted);font-size:13px;">N insuficiente con estos filtros.</p>'; if(document.getElementById(corrElemId)) document.getElementById(corrElemId).textContent='—'; return; }
+  const fit = olsFit(x.map(v=>[1,v]), y, ['Intercept','x']);
+  const xmin=Math.min(...x), xmax=Math.max(...x);
+  const xg=[]; for(let i=0;i<=30;i++) xg.push(xmin+(xmax-xmin)*i/30);
+  const predY=xg.map(x0=>fit.coefs[0].beta+fit.coefs[1].beta*x0);
+  const pear = pearson(x,y);
+  if(document.getElementById(corrElemId)) document.getElementById(corrElemId).innerHTML = `r=${fmt(pear.r,3)} [${fmt(pear.ci[0],2)}, ${fmt(pear.ci[1],2)}] ${sigBadge(pear.p)}`;
+  Plotly.newPlot(divId, [
+    {x, y, mode:'markers', type:'scatter', marker:{color, size:6, opacity:0.65}, name:'Participantes'},
+    {x:xg, y:predY, mode:'lines', line:{color:'#101E27', width:2}, name:'Tendencia'}
+  ], {
+    margin:{l:50,r:10,t:10,b:38}, xaxis:{title:xlab, gridcolor:'#EAEAE4'}, yaxis:{title:ylab, gridcolor:'#EAEAE4'},
+    font:{family:'IBM Plex Sans', size:11}, paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)', showlegend:false
+  }, {displayModeBar:false, responsive:true});
+}
+
+// ================= 12. Efectos ajustados =================
+function renderEffects(filtered){
+  const panel = document.getElementById('panel-efectos');
+  const m = fitAllModels(filtered);
+  if(!m.adjustado || m.adjustado.error){
+    panel.innerHTML = `<div class="panel"><h2>12 · Efectos ajustados <span class="tag">dinámico</span></h2>
+      <p style="color:var(--muted);">Modelo ajustado no estimable con los filtros actuales (N insuficiente o falta de variación en alguna covariable categórica).</p></div>`;
+    return;
+  }
+  const cc = m.ccFull;
+  const pcrMean = mean(cc.map(d=>d.proteina_c_reactiva_mg_l));
+  const edadMean = mean(cc.map(d=>d.edad));
+  const sexoMeans = m.otherSexos.map(s=>mean(cc.map(d=>d.sexo===s?1:0)));
+  const regionMeans = m.otherRegions.map(r=>mean(cc.map(d=>d.region===r?1:0)));
+  const imcVals = cc.map(d=>d.imc);
+  const imin = Math.min(...imcVals), imax = Math.max(...imcVals);
+  const xg = []; for(let i=0;i<=40;i++) xg.push(imin+(imax-imin)*i/40);
+  const predY=[], loY=[], hiY=[];
+  xg.forEach(x0=>{
+    const row = [1, x0, pcrMean, edadMean, ...sexoMeans, ...regionMeans];
+    const pr = predictWithCI(m.adjustado, row);
+    predY.push(pr.yhat); loY.push(pr.ci[0]); hiY.push(pr.ci[1]);
+  });
+
+  panel.innerHTML = `
+  <div class="panel">
+    <h2>12 · Efectos ajustados: IMC → ferritina, manteniendo covariables constantes <span class="tag">dinámico · N=${m.adjustado.n}</span></h2>
+    <p class="lead">Predicciones del modelo ajustado (no valores observados), manteniendo PCR=${fmt(pcrMean,2)} mg/L, edad=${fmt(edadMean,1)} años, y la composición promedio de sexo/región del subconjunto filtrado. Sombra = IC95% de la predicción. El eje X se limita al rango de IMC observado (${fmt(imin,1)}–${fmt(imax,1)} kg/m²); no se extrapola fuera de este rango.</p>
+    <div id="effectsPlot" class="plotdiv" style="height:400px;"></div>
+    <div class="callout">Unidades: ferritina en ng/mL, IMC en kg/m². La banda representa incertidumbre de la <i>media condicional ajustada</i>, no del valor individual de un paciente.</div>
+  </div>`;
+
+  Plotly.newPlot('effectsPlot', [
+    {x:xg.concat([...xg].reverse()), y:hiY.concat([...loY].reverse()), fill:'toself', fillcolor:'rgba(31,110,117,0.15)', line:{color:'transparent'}, name:'IC95%'},
+    {x:xg, y:predY, mode:'lines', line:{color:'#134048', width:2.5}, name:'Predicción ajustada'}
+  ], {
+    margin:{l:55,r:20,t:10,b:44}, xaxis:{title:'IMC (kg/m²) — rango observado', gridcolor:'#EAEAE4'},
+    yaxis:{title:'Ferritina sérica ajustada (ng/mL)', gridcolor:'#EAEAE4'},
+    font:{family:'IBM Plex Sans', size:12}, paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)', legend:{orientation:'h', y:-0.18}
+  }, {displayModeBar:false, responsive:true});
+}
+
+// ================= 9. Sensibilidad (estática) =================
+function renderSensitivity(){
+  const s = PRE.sensitivity;
+  const panel = document.getElementById('panel-sensibilidad');
+  const rows = [
+    ['Modelo ajustado principal', s.principal, '156 participantes con datos completos en IMC, ferritina, PCR, edad, sexo y región.'],
+    ['Excluyendo menores de 18 años (n=2)', s.excl_menores18, 'El IMC adulto (kg/m²) no es directamente comparable en niños; se evalúa si afecta la conclusión.'],
+    ['Excluyendo PCR &gt; 10 mg/L (n=7, inflamación aguda marcada)', s.excl_pcr_alta, 'Valores plausibles, no se excluyen del análisis principal; se prueban aquí como robustez.'],
+    ['Muestra máxima disponible, modelo crudo (sin ajustar)', s.crudo_muestra_maxima, 'N=182, usa todos los casos con IMC y ferritina no faltantes (sin requerir covariables completas).'],
+  ];
+  const bodyRows = rows.map(([label,r,note])=>{
+    if(r.nota) return '';
+    return `<tr><td>${label}<div style="font-size:11px;color:var(--muted);">${note}</div></td>
+      <td class="num">${fmt(r.beta,4)}</td><td class="num">[${fmt(r.ci[0],4)}, ${fmt(r.ci[1],4)}]</td>
+      <td class="num">${sigBadge(r.p)}</td><td class="num">${r.n}</td></tr>`;
+  }).join('');
+  panel.innerHTML = `
+  <div class="panel">
+    <h2>9 · Análisis de sensibilidad <span class="tag static">calculado en Python sobre especificaciones fijas</span></h2>
+    <p class="lead">Se evalúa si la asociación IMC–ferritina (coeficiente ajustado por PCR, edad, sexo y región) es robusta ante distintas decisiones analíticas. No se elimina ningún dato de forma automática; toda exclusión aquí es explícita, cuantificada y comparada contra el modelo principal.</p>
+    <table>
+      <thead><tr><th>Especificación</th><th class="num">β(IMC)</th><th class="num">IC95%</th><th class="num">p</th><th class="num">N</th></tr></thead>
+      <tbody>${bodyRows}</tbody>
+    </table>
+    <div class="subhead">Transformación logarítmica de ferritina</div>
+    <div class="stat-line"><span class="k">log(ferritina) ~ IMC + PCR + edad + sexo + región</span>
+      <span class="v">β=${fmt(s.log_ferritina.beta,4)} [${fmt(s.log_ferritina.ci[0],4)}, ${fmt(s.log_ferritina.ci[1],4)}] ${sigBadge(s.log_ferritina.p)} · N=${s.log_ferritina.n}</span></div>
+    <p style="font-size:12.5px;color:var(--muted);">≈ ${pctFmt(s.log_ferritina.pct_cambio_por_unidad_imc,2)} de cambio relativo en ferritina por cada kg/m² de IMC adicional. Dirección y significancia consistentes con el modelo lineal, aunque (ver pestaña Modelos) los residuos de esta especificación se comportan peor.</p>
+    <div class="callout">
+      <b>Conclusión de robustez:</b> el coeficiente de IMC se mantiene negativo, de magnitud similar (−0.43 a −0.92 según especificación) y con el mismo patrón de atenuación al ajustar por PCR en todas las variantes evaluadas. Ninguna de las exclusiones o transformaciones cambia la conclusión cualitativa: existe una asociación inversa entre IMC y ferritina que se atenúa sustancialmente al considerar la inflamación (PCR).
+    </div>
+  </div>`;
+}
+
+// ================= 13. Interpretación (dinámica) =================
+function renderInterpretation(filtered){
+  const panel = document.getElementById('panel-interpretacion');
+  const m = fitAllModels(filtered);
+  const adj = m.adjustado && !m.adjustado.error ? m.adjustado.coefs.find(c=>c.label==='imc') : null;
+  const crude = m.crudo && !m.crudo.error ? m.crudo.coefs.find(c=>c.label==='imc') : null;
+
+  let pctChange = null;
+  if(adj && crude) pctChange = 100*(adj.beta-crude.beta)/crude.beta;
+
+  const resultText = adj ?
+    `En el subconjunto filtrado actual (N=${m.adjustado.n}), el coeficiente ajustado de IMC sobre ferritina es β=${fmt(adj.beta,3)} ng/mL por kg/m² (IC95% [${fmt(adj.ci[0],3)}, ${fmt(adj.ci[1],3)}], ${fmtP(adj.p)}), tras controlar por PCR, edad, sexo y región.` :
+    `No fue posible estimar el modelo ajustado con los filtros actuales (N insuficiente o sin variación en alguna covariable categórica).`;
+
+  const epiText = adj ?
+    `En esta muestra se observa una asociación ${adj.beta<0?'inversa':'directa'} entre IMC y ferritina sérica${adj.p<0.05?', estadísticamente significativa al 5%':', que no alcanza significancia estadística convencional (p≥0.05) tras el ajuste'}. ${pctChange!=null?`Al comparar con el modelo crudo (sin ajustar), el coeficiente cambia ${pctFmt(pctChange,1)}, lo que es compatible con que parte de la asociación cruda esté explicada estadísticamente por la inflamación sistémica (PCR).`:''}` :
+    `No se puede describir la asociación ajustada con los filtros actuales.`;
+
+  panel.innerHTML = `
+  <div class="panel">
+    <h2>13 · Interpretación epidemiológica automática <span class="tag">se recalcula con los filtros activos</span></h2>
+    <p class="lead">Generada exclusivamente a partir de los resultados calculados arriba para el subconjunto de datos actualmente filtrado. No se afirma causalidad en ningún punto.</p>
+
+    <div class="interp-block"><h4><span class="n">1</span>Resultado estadístico</h4><p>${resultText}</p></div>
+    <div class="interp-block"><h4><span class="n">2</span>Interpretación epidemiológica</h4><p>${epiText} La asociación cruda IMC–ferritina (r≈${fmt(pearson(completeCase(filtered,['imc','ferritina_serica_ng_ml']).map(d=>d.imc), completeCase(filtered,['imc','ferritina_serica_ng_ml']).map(d=>d.ferritina_serica_ng_ml)).r,2)}) es más fuerte que la asociación ajustada, lo que sugiere que una parte relevante de la relación observada se relaciona con inflamación de bajo grado asociada a la adiposidad, más que con el estado de hierro per se.</p></div>
+    <div class="interp-block"><h4><span class="n">3</span>Posible explicación biológica</h4><p>La ferritina es, además de un marcador de reservas de hierro, un <b>reactante de fase aguda</b>: su síntesis hepática aumenta en respuesta a citocinas inflamatorias (p. ej. IL-6) típicamente elevadas en la obesidad y el tejido adiposo inflamado. Esto puede <b>enmascarar</b> una deficiencia de hierro real en personas con mayor IMC, produciendo valores de ferritina "falsamente normales o elevados" que no reflejan el estado real de hierro — un fenómeno bien descrito en la literatura de nutrición y obesidad.</p></div>
+    <div class="interp-block"><h4><span class="n">4</span>Limitaciones</h4><p>Diseño <b>transversal y observacional</b>: no hay temporalidad que permita inferir causalidad ni descartar causalidad inversa. La PCR es una medición puntual y no distingue inflamación aguda de crónica. No se midieron otros determinantes de ferritina (enfermedad hepática, consumo de alcohol, infecciones recientes, suplementación con hierro, menstruación). El tamaño muestral tras ajustar y filtrar (N=${m.adjustado?m.adjustado.n:'—'}) limita la potencia estadística, especialmente en subgrupos pequeños.</p></div>
+    <div class="interp-block"><h4><span class="n">5</span>Implicación potencial para salud pública</h4><p>Si se confirmara en estudios longitudinales, esto tendría relevancia para la <b>interpretación clínica de la ferritina como marcador de deficiencia de hierro en poblaciones con alta prevalencia de sobrepeso/obesidad</b>: podría ser necesario considerar la PCR u otros marcadores inflamatorios al evaluar el estado de hierro en estas personas, para evitar subdiagnosticar deficiencia de hierro enmascarada por inflamación.</p></div>
+
+    <div class="callout danger"><b>Advertencia sobre causalidad:</b> estos son datos observacionales y transversales. La asociación no establece temporalidad ni causalidad en ninguna dirección (IMC→ferritina, PCR→ferritina, o factores no medidos que expliquen ambas).</div>
+  </div>`;
+}
+
+// ================= 14. Calidad y limitaciones (dinámica) =================
+function renderQuality(filtered){
+  const panel = document.getElementById('panel-calidad');
+  const m = fitAllModels(filtered);
+  const missPct = (field)=>{
+    const n = filtered.length;
+    const miss = filtered.filter(d=>d[field]==null).length;
+    return n? (100*miss/n).toFixed(1):'—';
+  };
+  panel.innerHTML = `
+  <div class="panel">
+    <h2>14 · Calidad y limitaciones del análisis <span class="tag">dinámico</span></h2>
+    <div class="grid2">
+      <div>
+        <div class="subhead">Tamaños de muestra por modelo (filtros actuales)</div>
+        <div class="stat-line"><span class="k">N tras filtros (base)</span><span class="v">${filtered.length}</span></div>
+        <div class="stat-line"><span class="k">N modelo crudo (IMC+ferritina)</span><span class="v">${m.crudo&&!m.crudo.error?m.crudo.n:'no estimable'}</span></div>
+        <div class="stat-line"><span class="k">N modelo +PCR</span><span class="v">${m.masPcr&&!m.masPcr.error?m.masPcr.n:'no estimable'}</span></div>
+        <div class="stat-line"><span class="k">N modelo ajustado completo</span><span class="v">${m.adjustado&&!m.adjustado.error?m.adjustado.n:'no estimable'}</span></div>
+        <div class="subhead">% de datos faltantes (dentro del filtro actual)</div>
+        <div class="stat-line"><span class="k">IMC</span><span class="v">${missPct('imc')}%</span></div>
+        <div class="stat-line"><span class="k">Ferritina</span><span class="v">${missPct('ferritina_serica_ng_ml')}%</span></div>
+        <div class="stat-line"><span class="k">PCR</span><span class="v">${missPct('proteina_c_reactiva_mg_l')}%</span></div>
+        <div class="stat-line"><span class="k">Edad</span><span class="v">${missPct('edad')}%</span></div>
+        <div class="stat-line"><span class="k">Región</span><span class="v">${missPct('region')}%</span></div>
+      </div>
+      <div>
+        <div class="subhead">Método y especificación</div>
+        <div class="stat-line"><span class="k">Correlación</span><span class="v">Pearson + Spearman (con IC95%, Fisher z)</span></div>
+        <div class="stat-line"><span class="k">Comparación de grupos</span><span class="v">Kruskal-Wallis (robusta a varianzas desiguales)</span></div>
+        <div class="stat-line"><span class="k">Modelo principal</span><span class="v">OLS: ferritina ~ IMC + PCR + edad + sexo + región</span></div>
+        <div class="stat-line"><span class="k">Transformación aplicada</span><span class="v">Ninguna en el modelo principal (ver justificación en pestaña Modelos)</span></div>
+        <div class="stat-line"><span class="k">Casos excluidos</span><span class="v">Ninguno de forma automática; caso completo por modelo (missing listwise)</span></div>
+        <div class="stat-line"><span class="k">Confusión evaluada</span><span class="v">PCR (inflamación), edad, sexo, región</span></div>
+        <div class="stat-line"><span class="k">Confusión residual posible</span><span class="v">Enfermedad hepática, consumo de alcohol, infecciones, suplementación con hierro, ciclo menstrual (no medidos)</span></div>
+      </div>
+    </div>
+    <div class="callout warn">
+      <b>Limitaciones de diseño:</b> estudio transversal de una sola medición por participante; la PCR no distingue inflamación aguda vs. crónica; el IMC no distingue masa grasa de masa magra ni su distribución corporal; la dieta de hierro es autorreportada.
+    </div>
+    <div class="callout danger">
+      <b>Advertencia sobre causalidad:</b> ningún resultado de este panel debe interpretarse como prueba de que el IMC "causa" cambios en la ferritina, ni de que la inflamación "causa" la atenuación observada. Estos datos permiten describir asociaciones y explorar confusión estadística, no establecer causalidad.
+    </div>
+  </div>`;
+}
+
+// ================= Orquestación =================
+function renderAll(){
+  const filtered = applyFilters();
+  document.getElementById('nFiltered').textContent = filtered.length;
+  const warnBox = document.getElementById('smallSampleWarn');
+  warnBox.innerHTML = filtered.length < 30
+    ? `<div class="warn-inline" style="margin-top:8px;">⚠ Muestra filtrada pequeña (N=${filtered.length}). Los modelos, correlaciones y comparaciones por grupo pueden ser inestables — interpretar con cautela.</div>`
+    : '';
+
+  renderDescriptives(filtered);
+  renderScatter(filtered);
+  renderGroups(filtered);
+  renderRegression(filtered);
+  renderInflammation(filtered);
+  renderEffects(filtered);
+  renderInterpretation(filtered);
+  renderQuality(filtered);
+}
+
+function init(){
+  initTabs();
+  initFilters();
+  renderHero();
+  renderValidation();
+  renderSensitivity();
+  renderAll();
+}
+document.addEventListener('DOMContentLoaded', init);
+
+</script>
+</body>
+</html>
